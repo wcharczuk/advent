@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/blendlabs/go-util"
-	"github.com/blendlabs/go-util/collections"
+	"github.com/blend/go-sdk/collections"
+	"github.com/blend/go-sdk/util"
 )
 
 const (

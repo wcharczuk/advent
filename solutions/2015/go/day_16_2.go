@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/blendlabs/go-util"
+	"github.com/blend/go-sdk/util"
 )
 
 const ANALYSIS_RESULTS = `children: 3

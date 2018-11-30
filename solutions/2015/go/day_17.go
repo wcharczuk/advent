@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/blendlabs/go-util"
+	"github.com/blend/go-sdk/util"
 )
 
 var containers = []int{

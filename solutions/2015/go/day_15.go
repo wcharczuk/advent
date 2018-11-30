@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/blendlabs/go-util"
+	"github.com/blend/go-sdk/util"
 )
 
 func test() {

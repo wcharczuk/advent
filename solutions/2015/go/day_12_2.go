@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/blendlabs/go-exception"
+	"github.com/blend/go-sdk/exception"
 )
 
 func test(label string, actual, expected interface{}) {
