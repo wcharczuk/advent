@@ -20,7 +20,7 @@ func main() {
 			}
 			freq = freq + adjustment
 			if seen.Contains(freq) {
-				log.Print("duplicate: ", freq)
+				log.Context("solution").Print(freq)
 				os.Exit(0)
 			}
 			seen.Add(freq)

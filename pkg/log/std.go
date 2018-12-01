@@ -23,7 +23,7 @@ func (l Std) Context(label string) Logger {
 
 // Timestamp returns the current time as a string.
 func (l Std) Timestamp() string {
-	return time.Now().UTC().Format(time.RFC3339)
+	return ColorLightBlack.Apply(time.Now().UTC().Format(time.RFC3339))
 }
 
 // Heading returns the current contexts as a string.
@@ -60,16 +60,4 @@ func (l Std) Error(args ...interface{}) {
 // Errorf prints to stderr.
 func (l Std) Errorf(format string, args ...interface{}) {
 	l.Fprint(os.Stderr, fmt.Sprintf(format, args...))
-}
-
-// Fatal prints to stderr and quits the process with exit code 1.
-func (l Std) Fatal(args ...interface{}) {
-	l.Fprint(os.Stderr, args...)
-	os.Exit(1)
-}
-
-// Fatalf prints to stderr and quits the process with exit code 1.
-func (l Std) Fatalf(format string, args ...interface{}) {
-	l.Fprint(os.Stderr, fmt.Sprintf(format, args...))
-	os.Exit(1)
 }

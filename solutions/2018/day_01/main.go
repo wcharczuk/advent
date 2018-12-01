@@ -20,5 +20,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Print(freq)
+	log.Context("solution").Print(freq)
 }

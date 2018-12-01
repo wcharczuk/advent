@@ -1,5 +1,7 @@
 package log
 
+import "os"
+
 // Logger is a type that prints to logs.
 type Logger interface {
 	Print(args ...interface{})
@@ -7,9 +9,6 @@ type Logger interface {
 
 	Error(args ...interface{})
 	Errorf(format string, args ...interface{})
-
-	Fatal(args ...interface{})
-	Fatalf(format string, args ...interface{})
 
 	// Should nest to a new context
 	Context(label string) Logger
@@ -40,12 +39,26 @@ func Errorf(format string, args ...interface{}) {
 	std.Errorf(format, args...)
 }
 
-// Fatal prints an error message
-func Fatal(args ...interface{}) {
-	std.Fatal(args...)
+// Solution prints a message and exit(0)s the process.
+func Solution(args ...interface{}) {
+	std.Context("solution").Print(args...)
+	os.Exit(0)
 }
 
-// Fatalf prints an error message
+// Solutionf prints a message and exit(0)s the process.
+func Solutionf(format string, args ...interface{}) {
+	std.Context("solution").Printf(format, args...)
+	os.Exit(0)
+}
+
+// Fatal prints an error message and exit(1)s the process.
+func Fatal(args ...interface{}) {
+	std.Context("fatal").Error(args...)
+	os.Exit(1)
+}
+
+// Fatalf prints an error message and exit(1)s the process.
 func Fatalf(format string, args ...interface{}) {
-	std.Fatalf(format, args...)
+	std.Context("fatal").Errorf(format, args...)
+	os.Exit(1)
 }
