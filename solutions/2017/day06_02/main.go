@@ -7,8 +7,8 @@ import (
 	"log"
 	"strconv"
 
-	util "github.com/blendlabs/go-util"
-	"github.com/blendlabs/go-util/collections"
+	"github.com/wcharczuk/advent/pkg/collections"
+	"github.com/wcharczuk/advent/pkg/stringutil"
 )
 
 type bank struct {
@@ -56,7 +56,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// break into blocks
-	words := util.String.SplitOnSpace(string(contents))
+	words := stringutil.SplitOnWhitespace(string(contents))
 
 	// create bank
 	b := &bank{}

@@ -3,17 +3,20 @@ package main
 import (
 	"log"
 
-	"github.com/blendlabs/go-util"
+	"github.com/wcharczuk/advent/pkg/fileutil"
+	"github.com/wcharczuk/advent/pkg/mathutil"
+	"github.com/wcharczuk/advent/pkg/parse"
+	"github.com/wcharczuk/advent/pkg/stringutil"
 )
 
 func main() {
 	var total int
-	err := util.File.ReadByLines("./testdata/input", func(line string) error {
-		cols, err := util.Parse.Ints(util.String.SplitOnSpace(line)...)
+	err := fileutil.ReadByLines("./testdata/input", func(line string) error {
+		cols, err := parse.Ints(stringutil.SplitOnWhitespace(line)...)
 		if err != nil {
 			return err
 		}
-		min, max := util.Math.MinAndMaxOfInt(cols...)
+		min, max := mathutil.MinAndMaxOfInt(cols...)
 		total += (max - min)
 		return nil
 	})

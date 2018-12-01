@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/blend/go-sdk/collections"
-	"github.com/blend/go-sdk/util"
+	"github.com/wcharczuk/advent/pkg/collections"
+	"github.com/wcharczuk/advent/pkg/fileutil"
 )
 
 // The input
@@ -17,7 +17,7 @@ type xform [2]string
 
 func main() {
 	xfs := []xform{}
-	util.File.ReadByLines("../testdata/day19", func(line string) error {
+	fileutil.ReadByLines("../testdata/day19", func(line string) error {
 		parts := strings.Split(line, " => ")
 		xfs = append(xfs, xform{parts[0], parts[1]})
 		return nil

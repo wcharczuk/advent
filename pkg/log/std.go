@@ -8,6 +8,9 @@ import (
 	"time"
 )
 
+// a standard singleton.
+var std Std
+
 // Std writes to stdout or stderr.
 type Std struct {
 	Contexts []string
@@ -31,6 +34,7 @@ func (l Std) Heading() string {
 // Fprint writes to a given writer.
 func (l Std) Fprint(w io.Writer, args ...interface{}) {
 	fmt.Fprint(w, l.Timestamp())
+	fmt.Fprint(w, " ")
 	if heading := l.Heading(); heading != "" {
 		fmt.Fprintf(w, " [%s] ", heading)
 	}
@@ -58,13 +62,14 @@ func (l Std) Errorf(format string, args ...interface{}) {
 	l.Fprint(os.Stderr, fmt.Sprintf(format, args...))
 }
 
-// Fatal prints to stderr and quits the process.
+// Fatal prints to stderr and quits the process with exit code 1.
 func (l Std) Fatal(args ...interface{}) {
 	l.Fprint(os.Stderr, args...)
 	os.Exit(1)
 }
 
-// Errorf prints to stderr.
-func (l Std) Errorf(format string, args ...interface{}) {
+// Fatalf prints to stderr and quits the process with exit code 1.
+func (l Std) Fatalf(format string, args ...interface{}) {
 	l.Fprint(os.Stderr, fmt.Sprintf(format, args...))
+	os.Exit(1)
 }

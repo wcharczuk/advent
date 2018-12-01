@@ -3,14 +3,15 @@ package main
 import (
 	"log"
 
-	util "github.com/blendlabs/go-util"
-	"github.com/blendlabs/go-util/collections"
+	"github.com/wcharczuk/advent/pkg/collections"
+	"github.com/wcharczuk/advent/pkg/fileutil"
+	"github.com/wcharczuk/advent/pkg/stringutil"
 )
 
 func main() {
 	var valid int
-	err := util.File.ReadByLines("./testdata/input", func(line string) error {
-		words := util.String.SplitOnSpace(line)
+	err := fileutil.ReadByLines("./testdata/input", func(line string) error {
+		words := stringutil.SplitOnWhitespace(line)
 		lookup := collections.NewSetOfString()
 		for _, word := range words {
 			if !lookup.Contains(word) {
@@ -19,7 +20,6 @@ func main() {
 				return nil
 			}
 		}
-
 		valid++
 		return nil
 	})

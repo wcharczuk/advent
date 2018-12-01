@@ -5,14 +5,15 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/blend/go-sdk/collections"
-	"github.com/blend/go-sdk/util"
+	"github.com/wcharczuk/advent/pkg/collections"
+	"github.com/wcharczuk/advent/pkg/fileutil"
 )
 
+// These do thigns
 const (
-	START    = "e"
-	END      = "CRnCaCaCaSiRnBPTiMgArSiRnSiRnMgArSiRnCaFArTiTiBSiThFYCaFArCaCaSiThCaPBSiThSiThCaCaPTiRnPBSiThRnFArArCaCaSiThCaSiThSiRnMgArCaPTiBPRnFArSiThCaSiRnFArBCaSiRnCaPRnFArPMgYCaFArCaPTiTiTiBPBSiThCaPTiBPBSiRnFArBPBSiRnCaFArBPRnSiRnFArRnSiRnBFArCaFArCaCaCaSiThSiThCaCaPBPTiTiRnFArCaPTiBSiAlArPBCaCaCaCaCaSiRnMgArCaSiThFArThCaSiThCaSiRnCaFYCaSiRnFYFArFArCaSiRnFYFArCaSiRnBPMgArSiThPRnFArCaSiRnFArTiRnSiRnFYFArCaSiRnBFArCaSiRnTiMgArSiThCaSiThCaFArPRnFArSiRnFArTiTiTiTiBCaCaSiRnCaCaFYFArSiThCaPTiBPTiBCaSiThSiRnMgArCaF"
-	TEST_END = "HOHOHO"
+	start   = "e"
+	end     = "CRnCaCaCaSiRnBPTiMgArSiRnSiRnMgArSiRnCaFArTiTiBSiThFYCaFArCaCaSiThCaPBSiThSiThCaCaPTiRnPBSiThRnFArArCaCaSiThCaSiThSiRnMgArCaPTiBPRnFArSiThCaSiRnFArBCaSiRnCaPRnFArPMgYCaFArCaPTiTiTiBPBSiThCaPTiBPBSiRnFArBPBSiRnCaFArBPRnSiRnFArRnSiRnBFArCaFArCaCaCaSiThSiThCaCaPBPTiTiRnFArCaPTiBSiAlArPBCaCaCaCaCaSiRnMgArCaSiThFArThCaSiThCaSiRnCaFYCaSiRnFYFArFArCaSiRnFYFArCaSiRnBPMgArSiThPRnFArCaSiRnFArTiRnSiRnFYFArCaSiRnBFArCaSiRnTiMgArSiThCaSiThCaFArPRnFArSiRnFArTiTiTiTiBCaCaSiRnCaCaFYFArSiThCaPTiBPTiBCaSiThSiRnMgArCaF"
+	testEnd = "HOHOHO"
 )
 
 type xform [2]string
@@ -25,13 +26,13 @@ func (br byReplacement) Less(i, j int) bool { return br[i][1] > br[j][1] }
 
 func main() {
 	xfs := []xform{}
-	util.File.ReadByLines("../testdata/day19", func(line string) error {
+	fileutil.ReadByLines("../testdata/day19", func(line string) error {
 		parts := strings.Split(line, " => ")
 		xfs = append(xfs, xform{parts[0], parts[1]})
 		return nil
 	})
 
-	results := find(xfs, START, END)
+	results := find(xfs, start, end)
 	fmt.Printf("shortest path is of length %d\n", len(results))
 }
 
@@ -49,9 +50,8 @@ func findImpl(xforms []xform, start, end string, path []xform) []xform {
 		return path
 	}
 
-	sorted_xforms := sortReplacementSizeDescending(xforms)
-
-	for _, xf := range sorted_xforms {
+	sortedTransforms := sortReplacementSizeDescending(xforms)
+	for _, xf := range sortedTransforms {
 		results := reverseApply(xf, end)
 		newPath := dupepath(path)
 		newPath = append(newPath, xf)
@@ -108,11 +108,11 @@ func reverseApply(xf xform, input string) []string {
 			ss.Add(string(final))
 		}
 	}
-	return ss.ToArray()
+	return ss.Values()
 }
 
 func apply(xf xform, input string) []string {
-	ss := collections.StringSet{}
+	ss := collections.SetOfString{}
 	key, replacement := xf[0], xf[1]
 	inputBytes := []byte(input)
 	for x := 0; x < len(inputBytes); x++ {
@@ -131,7 +131,7 @@ func apply(xf xform, input string) []string {
 			ss.Add(string(final))
 		}
 	}
-	return ss.ToArray()
+	return ss.Values()
 }
 
 func slice(buffer []byte, start, end int) []byte {

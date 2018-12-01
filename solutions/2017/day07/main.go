@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	util "github.com/blendlabs/go-util"
+	"github.com/wcharczuk/advent/pkg/fileutil"
 )
 
 type scanString string
@@ -47,7 +47,7 @@ func (n *node) height() int {
 func main() {
 	nodes := map[string]*node{}
 
-	err := util.File.ReadByLines("./testdata/input", func(line string) error {
+	err := fileutil.ReadByLines("./testdata/input", func(line string) error {
 		n := newNode()
 		var nameAndWeight string
 		if strings.Contains(line, "->") {

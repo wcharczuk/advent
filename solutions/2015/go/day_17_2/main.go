@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/blend/go-sdk/util"
+	"github.com/wcharczuk/advent/pkg/mathutil"
 )
 
 var containers = []int{
@@ -54,7 +54,7 @@ func main() {
 }
 
 func combinationsToTarget(target int, values []int) [][]int {
-	possibleValues := util.Math.PowOfInt(2, uint(len(values)))
+	possibleValues := mathutil.PowOfInt(2, uint(len(values)))
 
 	output := [][]int{}
 
@@ -66,7 +66,7 @@ func combinationsToTarget(target int, values []int) [][]int {
 				row = append(row, values[i])
 			}
 		}
-		if len(row) > 0 && util.SumOfInt(row) == target {
+		if len(row) > 0 && mathutil.SumInts(row...) == target {
 			output = append(output, row)
 		}
 	}

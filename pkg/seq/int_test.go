@@ -11,7 +11,7 @@ func TestInt(t *testing.T) {
 
 	assert.Equal([]int{0, 1, 2, 3}, Int(3).Values())
 	assert.Equal([]int{1, 2, 3}, Int(3).WithStart(1).Values())
-	assert.Empty(Int(3).WithStart(3).Values())
+	assert.Equal([]int{3}, Int(3).WithStart(3).Values())
 }
 
 func TestIntPanic(t *testing.T) {

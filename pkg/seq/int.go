@@ -9,8 +9,7 @@ func Int(end int) *IntSeq {
 
 // IntSeq is an integer sequence
 type IntSeq struct {
-	Start, End, Step *int
-	Current          *int
+	Start, End, Step, Current *int
 }
 
 // WithStart sets the start.
@@ -31,14 +30,6 @@ func (i *IntSeq) WithStep(step int) *IntSeq {
 	return i
 }
 
-// StepOrDefault returns the step or a default.
-func (i IntSeq) StepOrDefault() int {
-	if i.Step != nil {
-		return *i.Step
-	}
-	return 1
-}
-
 // StartOrDefault returns the start or a default.
 func (i IntSeq) StartOrDefault() int {
 	if i.Start != nil {
@@ -47,18 +38,17 @@ func (i IntSeq) StartOrDefault() int {
 	return 0
 }
 
-// Ensure ensures the sequence.
-func (i *IntSeq) Ensure() {
-	if i.Current == nil {
-		current := i.StartOrDefault()
-		i.Current = &current
+// StepOrDefault returns the step or a default.
+func (i IntSeq) StepOrDefault() int {
+	if i.Step != nil {
+		return *i.Step
 	}
+	return 1
 }
 
 // HasNext returns if there is a possible next value.
 func (i IntSeq) HasNext() bool {
-	i.Ensure()
-	if i.End == nil {
+	if i.End == nil || i.Current == nil {
 		return true
 	}
 	return *i.Current < *i.End
@@ -69,8 +59,14 @@ func (i *IntSeq) Next() (next int, ok bool) {
 	if !i.HasNext() {
 		return
 	}
-	*i.Current = *i.Current + i.StepOrDefault()
-	next = *i.Current
+	if i.Current == nil {
+		next = i.StartOrDefault()
+		i.Current = &next
+		ok = true
+		return
+	}
+	next = *i.Current + i.StepOrDefault()
+	i.Current = &next
 	ok = true
 	return
 }

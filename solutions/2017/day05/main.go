@@ -4,12 +4,12 @@ import (
 	"log"
 	"strconv"
 
-	util "github.com/blendlabs/go-util"
+	"github.com/wcharczuk/advent/pkg/fileutil"
 )
 
 func main() {
 	var ops []int
-	err := util.File.ReadByLines("./testdata/input", func(line string) error {
+	err := fileutil.ReadByLines("./testdata/input", func(line string) error {
 		val, err := strconv.Atoi(line)
 		if err != nil {
 			return err
