@@ -9,8 +9,12 @@ import (
 func TestFileReadByChunks(t *testing.T) {
 	assert := assert.New(t)
 
+	tf, err := NewTempFile([]byte("abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc"))
+	assert.Nil(err)
+	defer tf.Close()
+
 	called := false
-	assert.Nil(ReadByChunks("README.md", 32, func(chunk []byte) error {
+	assert.Nil(ReadByChunks(tf.Path, 32, func(chunk []byte) error {
 		called = true
 		return nil
 	}))

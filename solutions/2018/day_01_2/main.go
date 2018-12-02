@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"strconv"
 
 	"github.com/wcharczuk/advent/pkg/collections"
@@ -20,8 +19,7 @@ func main() {
 			}
 			freq = freq + adjustment
 			if seen.Contains(freq) {
-				log.Context("solution").Print(freq)
-				os.Exit(0)
+				log.Solution(freq)
 			}
 			seen.Add(freq)
 			return nil
