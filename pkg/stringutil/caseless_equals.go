@@ -22,6 +22,5 @@ func CaselessEquals(a, b string) bool {
 			return false
 		}
 	}
-
 	return true
 }
