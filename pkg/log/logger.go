@@ -1,6 +1,9 @@
 package log
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 // Logger is a type that prints to logs.
 type Logger interface {
@@ -10,13 +13,18 @@ type Logger interface {
 	Error(args ...interface{})
 	Errorf(format string, args ...interface{})
 
-	// Should nest to a new context
 	Context(label string) Logger
+	Contextf(format string, args ...interface{}) Logger
 }
 
 // Context returns the logger with a new context.
 func Context(label string) Logger {
 	return std.Context(label)
+}
+
+// Contextf returns the logger with a new context by format and args.
+func Contextf(format string, args ...interface{}) Logger {
+	return std.Context(fmt.Sprintf(format, args...))
 }
 
 // Print a message

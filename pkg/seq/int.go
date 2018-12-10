@@ -1,7 +1,16 @@
 package seq
 
-// Int returns an int sequence.
-func Int(end int) *IntSeq {
+// Ints returns a realized
+func Ints(start, end int) []int {
+	var output []int
+	for i := start; i < end; i++ {
+		output = append(output, i)
+	}
+	return output
+}
+
+// NewInt returns an int sequence.
+func NewInt(end int) *IntSeq {
 	return &IntSeq{
 		End: &end,
 	}

@@ -21,6 +21,11 @@ func (l Std) Context(label string) Logger {
 	return Std{Contexts: append(l.Contexts, label)}
 }
 
+// Contextf returns a new context by format.
+func (l Std) Contextf(format string, args ...interface{}) Logger {
+	return Std{Contexts: append(l.Contexts, fmt.Sprintf(format, args...))}
+}
+
 // Timestamp returns the current time as a string.
 func (l Std) Timestamp() string {
 	return ColorLightBlack.Apply(time.Now().UTC().Format(time.RFC3339))
