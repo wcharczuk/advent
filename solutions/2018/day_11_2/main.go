@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	width  = 300
-	height = 300
+	boardSize = 300
 
 	inputSerialNumber = 9221
 )
@@ -26,23 +25,22 @@ const (
 */
 
 func main() {
-	cells := array.TwoOfInt(300, 300)
-	for x := 0; x < width; x++ {
-		for y := 0; y < height; y++ {
+	cells := array.TwoOfInt(boardSize, boardSize)
+	for x := 0; x < boardSize; x++ {
+		for y := 0; y < boardSize; y++ {
 			cells[x][y] = powerLevel(inputSerialNumber, x+1, y+1)
 		}
 	}
 
-	results := make([]Result, 300)
+	results := make([]Result, boardSize)
 	wg := sync.WaitGroup{}
-	wg.Add(300)
-	for size := 1; size < 300; size++ {
+	wg.Add(boardSize - 1)
+	for size := 1; size < boardSize; size++ {
 		go func(size int) {
 			defer wg.Done()
-
 			var maxTotal, mx, my int
-			for x := 0; x < width-(size-1); x++ {
-				for y := 0; y < height-(size-1); y++ {
+			for x := 0; x < boardSize-(size-1); x++ {
+				for y := 0; y < boardSize-(size-1); y++ {
 					total := total(cells, x, y, size)
 					if maxTotal < total {
 						maxTotal = total
@@ -58,7 +56,7 @@ func main() {
 
 	println("tabulating results")
 	var maxSize, maxMetaTotal, mmx, mmy int
-	for x := 0; x < 300; x++ {
+	for x := 0; x < boardSize; x++ {
 		result := results[x]
 		if maxMetaTotal < result.Total {
 			maxMetaTotal = result.Total
