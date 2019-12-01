@@ -3,8 +3,6 @@ package fileutil
 import (
 	"io"
 	"os"
-
-	"github.com/blend/go-sdk/exception"
 )
 
 // ReadChunkHandler is a receiver for a chunk of a file.
@@ -15,7 +13,7 @@ func ReadByChunks(filePath string, chunkSize int, handler ReadChunkHandler) erro
 	f, err := os.Open(filePath)
 
 	if err != nil {
-		return exception.New(err)
+		return err
 	}
 	defer f.Close()
 
@@ -28,7 +26,7 @@ func ReadByChunks(filePath string, chunkSize int, handler ReadChunkHandler) erro
 		readData := chunk[:readBytes]
 		err = handler(readData)
 		if err != nil {
-			return exception.New(err)
+			return err
 		}
 	}
 	return nil

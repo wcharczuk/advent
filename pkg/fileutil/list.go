@@ -3,8 +3,6 @@ package fileutil
 import (
 	"io/ioutil"
 	"os"
-
-	"github.com/blend/go-sdk/exception"
 )
 
 // List returns all the file infos for a given directory path.
@@ -16,7 +14,7 @@ func List(path string) ([]os.FileInfo, error) {
 func ListMatches(path string, predicate func(os.FileInfo) bool) ([]os.FileInfo, error) {
 	dirFiles, err := ioutil.ReadDir(path)
 	if err != nil {
-		return nil, exception.New(err)
+		return nil, err
 	}
 	var files []os.FileInfo
 	for _, dirFile := range dirFiles {
