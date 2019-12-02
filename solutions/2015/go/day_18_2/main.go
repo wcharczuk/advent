@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/blend/go-sdk/util"
+	"github.com/wcharczuk/advent/pkg/fileutil"
 )
 
 const (
@@ -117,7 +117,7 @@ func (g Grid) String() string {
 func main() {
 	g := &Grid{}
 	row := 0
-	util.File.ReadByLines("../testdata/day18", func(line string) error {
+	fileutil.ReadByLines("../testdata/day18", func(line string) error {
 		lineBytes := []byte(line)
 		for col := 0; col < len(lineBytes); col++ {
 			if string(lineBytes[col]) == "#" {

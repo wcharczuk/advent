@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 
+	"github.com/wcharczuk/advent/pkg/dbg"
 	"github.com/wcharczuk/advent/pkg/fileutil"
 )
 
@@ -25,6 +26,7 @@ func main() {
 // and the fuel required to lift that mass.
 func ComputeFuel(mass float64) (output float64) {
 	for {
+		dbg.Spew(mass)
 		fuel := ComputeFuelForMass(mass)
 		if fuel == 0 {
 			return

@@ -1,0 +1,6 @@
+GO_SDK:
+  description: "use portable / inlined utility methods"
+  excludeFiles:
+  - "*_test.go"
+  importsContain:
+  - "github.com/blend/go-sdk/*"

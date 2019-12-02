@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-
-	"github.com/blend/go-sdk/exception"
 )
 
 func test(label string, actual, expected interface{}) {
@@ -81,7 +79,6 @@ func processJsonObject(object interface{}) float64 {
 
 	fmt.Printf("Failed to process object %T\n", object)
 	fmt.Printf("Field Value: %#v\n", object)
-	fmt.Printf("Location: \n%s\n", exception.GetStackTrace())
 	return 0
 }
 
@@ -130,7 +127,6 @@ func processJsonMap(object map[string]interface{}) float64 {
 
 		fmt.Printf("Failed to process field %T\n", field)
 		fmt.Printf("Field Value: %#v\n", field)
-		fmt.Printf("Location: \n%s\n", exception.GetStackTrace())
 	}
 	return subTotal
 }

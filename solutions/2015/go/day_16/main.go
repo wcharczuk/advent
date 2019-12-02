@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/blend/go-sdk/util"
+	"github.com/wcharczuk/advent/pkg/fileutil"
 )
 
 const ANALYSIS_RESULTS = `children: 3
@@ -75,7 +75,7 @@ func main() {
 	codeFile := "../testdata/day16"
 
 	aunts := []Aunt{}
-	util.File.ReadByLines(codeFile, func(line string) error {
+	fileutil.ReadByLines(codeFile, func(line string) error {
 		aunts = append(aunts, parseEntry(line))
 		return nil
 	})
