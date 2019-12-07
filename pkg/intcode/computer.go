@@ -68,7 +68,6 @@ func (c *Computer) Tick() error {
 
 	c.LogItem = OpLog{Name: c.Name, Op: c.Current, PC: c.PC}
 	defer func() {
-		fmt.Println(c.LogItem.String())
 		c.Log = append(c.Log, c.LogItem)
 	}()
 

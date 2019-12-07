@@ -72,7 +72,6 @@ func runExperiment(program []int, phaseSettings [5]int) int {
 		outputs[x] = make(chan int, 32)
 		amplifiers[x].OutputHandler = func(index int) func(int) {
 			return func(v int) {
-				println("output", index, v)
 				outputs[index] <- v
 			}
 		}(x)
@@ -84,10 +83,7 @@ func runExperiment(program []int, phaseSettings [5]int) int {
 
 		amplifiers[x].InputHandler = func(index int) func() int {
 			return func() int {
-				select {
-				case v := <-inputs[index]:
-					return v
-				}
+				return <-inputs[index]
 			}
 		}(x)
 
