@@ -5,14 +5,31 @@ import (
 )
 
 // New returns a computer for a given program.
-func New(program ...int) *Computer {
+func New(program []int, options ...ComputerOption) *Computer {
 	memory := make([]int, len(program))
 	copy(memory, program)
-	return &Computer{Memory: memory}
+	c := Computer{
+		Memory: memory,
+	}
+	for _, opt := range options {
+		opt(&c)
+	}
+	return &c
+}
+
+// ComputerOption is a mutator for computers.
+type ComputerOption func(*Computer)
+
+// OptName sets the computer name.
+func OptName(name string) ComputerOption {
+	return func(c *Computer) {
+		c.Name = name
+	}
 }
 
 // Computer is a state machine that processes a program.
 type Computer struct {
+	Name    string
 	PC      int
 	Current OpCode
 	A, B, X int
@@ -20,11 +37,19 @@ type Computer struct {
 
 	LogItem OpLog
 	Log     []OpLog
+
+	InputHandler  func() int
+	OutputHandler func(int)
 }
 
 // Run runs the program.
-func (c *Computer) Run() error {
-	var err error
+func (c *Computer) Run() (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%v", r)
+		}
+	}()
+
 	for {
 		err = c.Tick()
 		if err == ErrHalt {
@@ -41,8 +66,9 @@ func (c *Computer) Run() error {
 func (c *Computer) Tick() error {
 	c.Current = ParseOpCode(c.Memory[c.PC])
 
-	c.LogItem = OpLog{Op: c.Current, PC: c.PC}
+	c.LogItem = OpLog{Name: c.Name, Op: c.Current, PC: c.PC}
 	defer func() {
+		fmt.Println(c.LogItem.String())
 		c.Log = append(c.Log, c.LogItem)
 	}()
 
@@ -114,7 +140,13 @@ func (c *Computer) Input() error {
 	if c.X, err = c.Load(1); err != nil {
 		return err
 	}
-	if err = c.Store(readInt()); err != nil {
+	var value int
+	if c.InputHandler != nil {
+		value = c.InputHandler()
+	} else {
+		value = readInt()
+	}
+	if err = c.Store(value); err != nil {
 		return err
 	}
 	c.PC = c.PC + 2
@@ -127,7 +159,11 @@ func (c *Computer) Print() error {
 	if c.X, _, err = c.LoadMode(1); err != nil {
 		return err
 	}
-	fmt.Println(c.X)
+	if c.OutputHandler != nil {
+		c.OutputHandler(c.X)
+	} else {
+		fmt.Println(c.X)
+	}
 	c.PC = c.PC + 2
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 
 // OpLog is a log item.
 type OpLog struct {
+	Name       string
 	PC         int
 	Op         OpCode
 	Parameters []OpLogParameter
@@ -17,6 +18,7 @@ type OpLog struct {
 // String implements fmt.Stringer.
 func (ol OpLog) String() string {
 	var pieces []string
+	pieces = append(pieces, fmt.Sprintf("%q", ol.Name))
 	pieces = append(pieces, fmt.Sprintf("(%d)", ol.PC))
 	pieces = append(pieces, ol.Op.String())
 	for _, param := range ol.Parameters {
