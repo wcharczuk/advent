@@ -167,7 +167,7 @@ func (c *Computer) Input() error {
 	if c.InputHandler != nil {
 		value = c.InputHandler()
 	} else {
-		value = readInt()
+		value = ReadInt()
 	}
 	if err = c.Store(value); err != nil {
 		return err
@@ -326,11 +326,4 @@ func (c *Computer) Store(value int) error {
 	}
 	c.Memory[c.X] = value
 	return nil
-}
-
-func readInt() int {
-	fmt.Print("Input: ")
-	var i int
-	fmt.Scanf("%d", &i)
-	return i
 }

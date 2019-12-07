@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
@@ -26,13 +26,11 @@ func main() {
 		}
 	}
 
-	computer := intcode.New(opCodes...)
+	computer := intcode.New(opCodes, intcode.OptName("diagnostics"), intcode.OptDebug(true))
 
 	err = computer.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, logItem := range computer.Log {
-		fmt.Println(logItem.String())
-	}
+	computer.WriteLogTo(os.Stdout)
 }
