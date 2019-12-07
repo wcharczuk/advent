@@ -27,29 +27,40 @@ func OptName(name string) ComputerOption {
 	}
 }
 
+// OptDebug sets if we should show debug output.
+func OptDebug(debug bool) ComputerOption {
+	return func(c *Computer) {
+		c.Debug = debug
+	}
+}
+
 // Computer is a state machine that processes a program.
 type Computer struct {
 	Name    string
+	Debug   bool
+	LogItem OpLog
+	Log     []OpLog
+
 	PC      int
 	Current OpCode
 	A, B, X int
 	Memory  []int
 
-	LogItem OpLog
-	Log     []OpLog
-
-	InputHandler  func() int
-	OutputHandler func(int)
+	IsRunning      bool
+	InputHandler   func() int
+	OutputHandlers []func(int)
 }
 
 // Run runs the program.
 func (c *Computer) Run() (err error) {
 	defer func() {
+		c.IsRunning = false
 		if r := recover(); r != nil {
 			err = fmt.Errorf("%v", r)
 		}
 	}()
 
+	c.IsRunning = true
 	for {
 		err = c.Tick()
 		if err == ErrHalt {
@@ -67,7 +78,13 @@ func (c *Computer) Tick() error {
 	c.Current = ParseOpCode(c.Memory[c.PC])
 
 	c.LogItem = OpLog{Name: c.Name, Op: c.Current, PC: c.PC}
+	if c.Debug {
+		fmt.Println(c.LogItem.String())
+	}
 	defer func() {
+		if c.Debug {
+			fmt.Println(c.LogItem.String())
+		}
 		c.Log = append(c.Log, c.LogItem)
 	}()
 
@@ -158,8 +175,10 @@ func (c *Computer) Print() error {
 	if c.X, _, err = c.LoadMode(1); err != nil {
 		return err
 	}
-	if c.OutputHandler != nil {
-		c.OutputHandler(c.X)
+	if len(c.OutputHandlers) > 0 {
+		for _, handler := range c.OutputHandlers {
+			handler(c.X)
+		}
 	} else {
 		fmt.Println(c.X)
 	}
