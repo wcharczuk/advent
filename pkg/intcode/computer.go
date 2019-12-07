@@ -2,6 +2,7 @@ package intcode
 
 import (
 	"fmt"
+	"io"
 )
 
 // New returns a computer for a given program.
@@ -36,13 +37,12 @@ func OptDebug(debug bool) ComputerOption {
 
 // Computer is a state machine that processes a program.
 type Computer struct {
-	Name    string
-	Debug   bool
-	LogItem OpLog
-	Log     []OpLog
+	Name  string
+	Debug bool
+	Log   []string
 
 	PC      int
-	Current OpCode
+	Op      OpCode
 	A, B, X int
 	Memory  []int
 
@@ -72,23 +72,30 @@ func (c *Computer) Run() (err error) {
 	}
 }
 
+// WriteLogTo writes log contents to a given writer.
+func (c *Computer) WriteLogTo(w io.Writer) (err error) {
+	for _, entry := range c.Log {
+		_, err = io.WriteString(w, entry+"\n")
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 // Tick applies a computer tick, reading the current op code
 // and potentially associated parameters.
 func (c *Computer) Tick() error {
-	c.Current = ParseOpCode(c.Memory[c.PC])
-
-	c.LogItem = OpLog{Name: c.Name, Op: c.Current, PC: c.PC}
-	if c.Debug {
-		fmt.Println(c.LogItem.String())
+	var err error
+	c.Op, err = ParseOpCode(c.Memory[c.PC])
+	if err != nil {
+		return err
 	}
-	defer func() {
-		if c.Debug {
-			fmt.Println(c.LogItem.String())
-		}
-		c.Log = append(c.Log, c.LogItem)
-	}()
+	if c.Debug {
+		c.Log = append(c.Log, fmt.Sprintf("%q (%d) %s", c.Name, c.PC, c.Op.String()))
+	}
 
-	switch c.Current.Op {
+	switch c.Op.Op {
 	case OpHalt:
 		return ErrHalt
 	case OpAdd:
@@ -263,37 +270,44 @@ func (c *Computer) Equals() error {
 }
 
 // Load loads a value directly without processing the parameter modes.
-func (c *Computer) Load(offset int) (int, error) {
+func (c *Computer) Load(offset int) (result int, err error) {
 	addr := c.PC + offset
-	if len(c.Memory) <= addr {
-		return 0, ErrInvalidAddress
+	if c.Debug {
+		defer func() {
+			c.Log = append(c.Log, fmt.Sprintf("%q (%d) load %d &%d > %d", c.Name, c.PC, offset, addr, result))
+		}()
 	}
-	return c.Memory[addr], nil
+	if len(c.Memory) <= addr {
+		err = ErrInvalidAddress
+		return
+	}
+	result = c.Memory[addr]
+	return
 }
 
 // LoadMode loads a value from a given offset from the PC.
 func (c *Computer) LoadMode(offset int) (result int, mode int, err error) {
 	addr := c.PC + offset
-	if len(c.Memory) <= addr {
-		return 0, 0, ErrInvalidAddress
+	if c.Debug {
+		defer func() {
+			c.Log = append(c.Log, fmt.Sprintf("%q (%d) loadmode %d &%d (%v) > %d", c.Name, c.PC, offset, addr, ParameterMode(mode), result))
+		}()
 	}
-	mode = c.Current.Mode(offset - 1)
-	defer func() {
-		c.LogItem.Parameters = append(c.LogItem.Parameters, OpLogParameter{
-			IsReference: mode == 0,
-			Addr:        addr,
-			Value:       result,
-		})
-	}()
+	if len(c.Memory) <= addr {
+		err = ErrInvalidAddress
+		return
+	}
+	mode = c.Op.Mode(offset - 1)
 	switch mode {
-	case 0:
+	case ParameterModeReference:
 		addr = c.Memory[addr]
 		if len(c.Memory) <= addr {
-			return 0, 0, ErrInvalidAddress
+			err = ErrInvalidAddress
+			return
 		}
 		result = c.Memory[addr]
 		return
-	case 1:
+	case ParameterModeValue:
 		result = c.Memory[addr]
 		return
 	default:
@@ -304,15 +318,11 @@ func (c *Computer) LoadMode(offset int) (result int, mode int, err error) {
 
 // Store writes a value to the address stored in the X register.
 func (c *Computer) Store(value int) error {
-	defer func() {
-		c.LogItem.Store = OpLogParameter{
-			IsReference: true,
-			Addr:        c.X,
-			Value:       value,
-		}
-	}()
 	if len(c.Memory) <= c.X {
 		return ErrInvalidAddress
+	}
+	if c.Debug {
+		c.Log = append(c.Log, fmt.Sprintf("%q (%d) store &%d < %d", c.Name, c.PC, c.X, value))
 	}
 	c.Memory[c.X] = value
 	return nil
