@@ -1,7 +1,6 @@
 package intcode
 
 import (
-	"os"
 	"testing"
 
 	"github.com/blend/go-sdk/assert"
@@ -11,18 +10,22 @@ func Test_ParseString(t *testing.T) {
 	assert := assert.New(t)
 
 	assembly := `
+# declare locals
 .limit
 .userInput
 .temp
+# start the program
 add 0 8 .limit
 input .userInput
 equals &.userInput &.limit .temp
 jump-if-false &.temp pc(6)
 print 0
+# sym(-1) here means jump to halt
 jump-if-false 0 sym(-1)
 less-than &.userInput &.limit .temp
 jump-if-false &.temp pc(6)
 print -1
+# sym(-1) here means jump to halt
 jump-if-false 0 sym(-1)
 print 1`
 
@@ -32,8 +35,6 @@ print 1`
 	var value int
 	computer := New(program,
 		OptName("parser-test"),
-		OptDebug(true),
-		OptDebugLog(os.Stdout),
 	)
 	computer.InputHandler = InputConstant(8)
 	computer.OutputHandlers = OutputHandlers(OutputCaptureValue(&value))

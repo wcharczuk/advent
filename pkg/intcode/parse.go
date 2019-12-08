@@ -24,7 +24,8 @@ func Parse(r io.Reader) ([]int, error) {
 	c := new(Compiler)
 	for scanner.Scan() {
 		line = scanner.Text()
-		if strings.TrimSpace(line) == "" {
+		if strings.TrimSpace(line) == "" || strings.HasPrefix(line, "#") {
+			// skip empty lines and comments
 			continue
 		}
 
