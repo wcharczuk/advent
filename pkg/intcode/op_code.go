@@ -51,20 +51,18 @@ func FormatOpCode(oc OpCode) int {
 	}
 
 	var pieces []string
-	if oc.Modes[2] != 0 {
-		pieces = append(pieces, strconv.Itoa(oc.Modes[2]))
+	if oc.Modes[0] != 0 {
+		pieces = append(pieces, strconv.Itoa(oc.Modes[0]))
 	}
-
 	if oc.Modes[1] != 0 {
 		pieces = append(pieces, strconv.Itoa(oc.Modes[1]))
 	} else if len(pieces) > 0 {
 		pieces = append(pieces, strconv.Itoa(oc.Modes[1]))
 	}
-
-	if oc.Modes[0] != 0 {
-		pieces = append(pieces, strconv.Itoa(oc.Modes[0]))
+	if oc.Modes[2] != 0 {
+		pieces = append(pieces, strconv.Itoa(oc.Modes[2]))
 	} else if len(pieces) > 0 {
-		pieces = append(pieces, strconv.Itoa(oc.Modes[0]))
+		pieces = append(pieces, strconv.Itoa(oc.Modes[2]))
 	}
 
 	pieces = append(pieces, fmt.Sprintf("%02d", oc.Op))

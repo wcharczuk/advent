@@ -37,9 +37,9 @@ func OptDebug(debug bool) ComputerOption {
 
 // Computer is a state machine that processes a program.
 type Computer struct {
-	Name  string
-	Debug bool
-	Log   []string
+	Name     string
+	Debug    bool
+	DebugLog []string
 
 	PC      int
 	Op      OpCode
@@ -72,9 +72,9 @@ func (c *Computer) Run() (err error) {
 	}
 }
 
-// WriteLogTo writes log contents to a given writer.
-func (c *Computer) WriteLogTo(w io.Writer) (err error) {
-	for _, entry := range c.Log {
+// WriteDebugLogTo writes log contents to a given writer.
+func (c *Computer) WriteDebugLogTo(w io.Writer) (err error) {
+	for _, entry := range c.DebugLog {
 		_, err = io.WriteString(w, entry+"\n")
 		if err != nil {
 			return
@@ -92,7 +92,7 @@ func (c *Computer) Tick() error {
 		return err
 	}
 	if c.Debug {
-		c.Log = append(c.Log, fmt.Sprintf("%q (%d) %s", c.Name, c.PC, c.Op.String()))
+		c.DebugLog = append(c.DebugLog, fmt.Sprintf("%q (%d) %s", c.Name, c.PC, c.Op.String()))
 	}
 
 	switch c.Op.Op {
@@ -274,11 +274,11 @@ func (c *Computer) Load(offset int) (result int, err error) {
 	addr := c.PC + offset
 	if c.Debug {
 		defer func() {
-			c.Log = append(c.Log, fmt.Sprintf("%q (%d) load %d &%d > %d", c.Name, c.PC, offset, addr, result))
+			c.DebugLog = append(c.DebugLog, fmt.Sprintf("%q (%d) load %d &%d > %d", c.Name, c.PC, offset, addr, result))
 		}()
 	}
 	if len(c.Memory) <= addr {
-		err = ErrInvalidAddress
+		err = fmt.Errorf("%v; address %d", ErrInvalidAddress, addr)
 		return
 	}
 	result = c.Memory[addr]
@@ -290,11 +290,11 @@ func (c *Computer) LoadMode(offset int) (result int, mode int, err error) {
 	addr := c.PC + offset
 	if c.Debug {
 		defer func() {
-			c.Log = append(c.Log, fmt.Sprintf("%q (%d) loadmode %d &%d (%v) > %d", c.Name, c.PC, offset, addr, ParameterMode(mode), result))
+			c.DebugLog = append(c.DebugLog, fmt.Sprintf("%q (%d) loadmode %d &%d (%v) > %d", c.Name, c.PC, offset, addr, ParameterMode(mode), result))
 		}()
 	}
 	if len(c.Memory) <= addr {
-		err = ErrInvalidAddress
+		err = fmt.Errorf("%v; address %d", ErrInvalidAddress, addr)
 		return
 	}
 	mode = c.Op.Mode(offset - 1)
@@ -302,7 +302,7 @@ func (c *Computer) LoadMode(offset int) (result int, mode int, err error) {
 	case ParameterModeReference:
 		addr = c.Memory[addr]
 		if len(c.Memory) <= addr {
-			err = ErrInvalidAddress
+			err = fmt.Errorf("%v; address %d", ErrInvalidAddress, addr)
 			return
 		}
 		result = c.Memory[addr]
@@ -322,7 +322,7 @@ func (c *Computer) Store(value int) error {
 		return ErrInvalidAddress
 	}
 	if c.Debug {
-		c.Log = append(c.Log, fmt.Sprintf("%q (%d) store &%d < %d", c.Name, c.PC, c.X, value))
+		c.DebugLog = append(c.DebugLog, fmt.Sprintf("%q (%d) store &%d < %d", c.Name, c.PC, c.X, value))
 	}
 	c.Memory[c.X] = value
 	return nil

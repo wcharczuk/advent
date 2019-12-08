@@ -55,10 +55,10 @@ func Test_FormatOpCode(t *testing.T) {
 		{Input: OpCode{Op: OpAdd}, Expected: OpAdd},
 		{Input: OpCode{Op: OpMul}, Expected: OpMul},
 		{Input: OpCode{Op: OpHalt}, Expected: OpHalt},
-		{Input: OpCode{Op: OpMul, Modes: [3]int{1, 0, 0}}, Expected: 102},
+		{Input: OpCode{Op: OpMul, Modes: [3]int{1, 0, 0}}, Expected: 10002},
 		{Input: OpCode{Op: OpMul, Modes: [3]int{0, 1, 0}}, Expected: 1002},
-		{Input: OpCode{Op: OpMul, Modes: [3]int{0, 0, 1}}, Expected: 10002},
-		{Input: OpCode{Op: OpMul, Modes: [3]int{0, 1, 1}}, Expected: 11002},
+		{Input: OpCode{Op: OpMul, Modes: [3]int{0, 0, 1}}, Expected: 102},
+		{Input: OpCode{Op: OpMul, Modes: [3]int{0, 1, 1}}, Expected: 1102},
 		{Input: OpCode{Op: OpMul, Modes: [3]int{1, 1, 1}}, Expected: 11102},
 	}
 
@@ -99,4 +99,16 @@ func Test_OpCode_Mode(t *testing.T) {
 	assert.Equal(1, oc.Mode(0))
 	assert.Equal(0, oc.Mode(1))
 	assert.Equal(0, oc.Mode(2))
+}
+
+func Test_OpCode_EndToEnd(t *testing.T) {
+	assert := assert.New(t)
+
+	ignoreError := func(oc OpCode, err error) OpCode { return oc }
+
+	rawOpCode := 2
+	assert.Equal(rawOpCode, FormatOpCode(ignoreError(ParseOpCode(rawOpCode))))
+
+	rawOpCode = 1108
+	assert.Equal(rawOpCode, FormatOpCode(ignoreError(ParseOpCode(rawOpCode))))
 }
