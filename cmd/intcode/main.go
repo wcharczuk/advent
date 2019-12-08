@@ -16,13 +16,13 @@ func main() {
 
 	var program []int
 	var err error
-	if len(os.Args) == 1 {
+	if len(flag.Args()) == 0 {
 		program, err = intcode.Parse(os.Stdin)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		f, err := os.Open(os.Args[1])
+		f, err := os.Open(flag.Arg(0))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -32,7 +32,11 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	computer := intcode.New(program, intcode.OptDebug(*debug), intcode.OptDebugLog(os.Stderr))
+	computer := intcode.New(
+		program,
+		intcode.OptName("debug"),
+		intcode.OptDebug(*debug),
+		intcode.OptDebugLog(os.Stderr))
 	computer.OutputHandlers = []func(int){
 		func(v int) {
 			fmt.Println("Output: ", v)
