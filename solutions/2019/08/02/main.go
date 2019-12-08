@@ -88,7 +88,11 @@ func (i Image) String() string {
 	for y := 0; y < len(i); y++ {
 		var line []string
 		for x := 0; x < len(i[y]); x++ {
-			line = append(line, strconv.Itoa(int(i[y][x])))
+			if i[y][x] == black {
+				line = append(line, " ")
+			} else {
+				line = append(line, "X")
+			}
 		}
 		lines = append(lines, strings.Join(line, ""))
 	}
