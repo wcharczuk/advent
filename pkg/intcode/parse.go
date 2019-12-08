@@ -103,8 +103,8 @@ func Parse(r io.Reader) ([]int, error) {
 // A parameter should be in the form:
 //    <value>
 //    &<addr>
-//    "name"
-//    &"name"
+//    .name
+//    &.name
 //    pc(<offset>)
 //    &pc(<offset>)
 //    sym(<offset>)
