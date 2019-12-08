@@ -10,15 +10,17 @@ func NewCompiler() *Compiler {
 // Word is a single chunk of program memory.
 type Word interface{}
 
-// Literal is a value that's read directly.
+// Literal is an offset from the beginning of the program, i.e. PC@0.
 type Literal int
 
-// Symbol is a reference to a variable.
+// Symbol is an offset from the end of the program,
+// typically it is used to give the value of a symbol (i.e. a variable)
+// but can also be used to move relative to the end of the program.
+// If your last instruction is 99 (HALT), you can use Symbol(-1) to jump to that halt.
 type Symbol int
 
-// PC is the current length of the program, i.e. the PC value.
-// The value itself is a relative position to the PC, i.e. forward N words or backwards N words.
-// Use 0 to indicate the PC itself.
+// PC is an offset from the current PC register,
+// You can use it to move relative to your progress within a program.
 type PC int
 
 // Parameter is an input to an operation.
@@ -55,10 +57,11 @@ func (c *Compiler) Compile() (program []int) {
 			program = append(program, int(typed))
 			continue
 		case Symbol:
-			program = append(program, len(c.Program)+int(typed)+1) // the symbol offset + the 1 for the halt.
+			program = append(program, len(c.Program)+(int(typed)+1))
 			continue
 		case PC:
 			program = append(program, len(program)+int(typed))
+			continue
 		}
 	}
 	program = append(program, OpHalt)
@@ -78,9 +81,9 @@ func (c *Compiler) CreateSymbol(name string) {
 	c.Symbols = append(c.Symbols, 0)
 }
 
-// SymbolValueParameter returns a new symbol parameter that is a immediate mode parameter.
+// ValueSymbol returns a new symbol parameter that is a immediate mode parameter.
 // This will load the value at a given (named) address and use it for an operation.
-func (c *Compiler) SymbolValueParameter(name string) Parameter {
+func (c *Compiler) ValueSymbol(name string) Parameter {
 	return Parameter{
 		Symbol: true,
 		Mode:   ParameterModeValue,
@@ -88,9 +91,9 @@ func (c *Compiler) SymbolValueParameter(name string) Parameter {
 	}
 }
 
-// SymbolReferenceParameter returns a new symbol parameter that is a reference mode parameter.
+// ReferenceSymbol returns a new symbol parameter that is a reference mode parameter.
 // This will load the value at a given (named) address and use that as the address to fetch the value to be used in the operation.
-func (c *Compiler) SymbolReferenceParameter(name string) Parameter {
+func (c *Compiler) ReferenceSymbol(name string) Parameter {
 	return Parameter{
 		Symbol: true,
 		Mode:   ParameterModeReference,
@@ -98,59 +101,96 @@ func (c *Compiler) SymbolReferenceParameter(name string) Parameter {
 	}
 }
 
-// SymbolStoreParameter is a paramter to be used as the X register value
+// StoreSymbol is a paramter to be used as the X register value
 // that indicates it is a symbol address.
-func (c *Compiler) SymbolStoreParameter(name string) Parameter {
+func (c *Compiler) StoreSymbol(name string) Parameter {
 	return Parameter{
 		Symbol: true,
 		Value:  c.SymbolAddrs[name],
 	}
 }
 
-// ValueParameter returns an immediate mode parameter.
-func (c *Compiler) ValueParameter(value int) Parameter {
+// ValueSymbolOffset returns a value that represents the address
+// that is offset from the end of the program.
+func (c *Compiler) ValueSymbolOffset(offset int) Parameter {
+	return Parameter{
+		Mode:   ParameterModeValue,
+		Symbol: true,
+		Value:  offset,
+	}
+}
+
+// ReferenceSymbolOffset returns a value that represents the address
+// that is offset from the end of the program.
+func (c *Compiler) ReferenceSymbolOffset(offset int) Parameter {
+	return Parameter{
+		Mode:   ParameterModeReference,
+		Symbol: true,
+		Value:  offset,
+	}
+}
+
+// ValueHaltAddr is a helper that returns the address of the final `99 (HALT)`
+// instruction that is added by the compiler.
+func (c *Compiler) ValueHaltAddr() Parameter {
+	return Parameter{
+		Mode:   ParameterModeValue,
+		Symbol: true,
+		Value:  -1,
+	}
+}
+
+// Value returns an immediate mode parameter.
+func (c *Compiler) Value(value int) Parameter {
 	return Parameter{
 		Mode:  ParameterModeValue,
 		Value: value,
 	}
 }
 
-// ReferenceParameter returns an reference mode parameter.
-func (c *Compiler) ReferenceParameter(addr int) Parameter {
+// Reference returns an reference mode parameter.
+func (c *Compiler) Reference(addr int) Parameter {
 	return Parameter{
 		Mode:  ParameterModeReference,
 		Value: addr,
 	}
 }
 
-// StoreParameter returns a program space storage parameter.
-func (c *Compiler) StoreParameter(x int) Parameter {
+// Store returns a program space storage parameter.
+// It is intended to be used as an address.
+func (c *Compiler) Store(addr int) Parameter {
 	return Parameter{
-		Value: x,
+		Value: addr,
 	}
 }
 
-// SetSymbolValue sets a symbol value, that is, it writes
-// directly to the symbol address for a given name, a given value.
-func (c *Compiler) SetSymbolValue(name string, value int) {
-	c.Symbols[c.SymbolAddrs[name]] = value
-}
-
-// PC returns a PC parameter with a given offset.
-func (c *Compiler) PC(offset int) Parameter {
+// ValuePC retruns a parameter that is a value of the current PC address with a given offset.
+func (c *Compiler) ValuePC(offset int) Parameter {
 	return Parameter{
+		Mode:  ParameterModeValue,
 		PC:    true,
 		Value: offset,
 	}
 }
 
-// Halt writes a halt operation at the current pc.
-func (c *Compiler) Halt() {
+// ReferencePC returns a PC parameter with a given offset.
+// It is always a reference, that is, it will have the effect
+// of returning the value at a given address, not the address itself.
+func (c *Compiler) ReferencePC(offset int) Parameter {
+	return Parameter{
+		Mode:  ParameterModeReference,
+		PC:    true,
+		Value: offset,
+	}
+}
+
+// EmitHalt writes a halt operation at the current pc.
+func (c *Compiler) EmitHalt() {
 	c.Program = append(c.Program, Literal(OpHalt))
 }
 
-// Add writes a new add operation with a given set of parameters.
-func (c *Compiler) Add(a, b, x Parameter) {
+// EmitAdd writes a new add operation with a given set of parameters.
+func (c *Compiler) EmitAdd(a, b, x Parameter) {
 	opcode := OpCode{Op: OpAdd, Modes: [3]int{0, b.Mode, a.Mode}}
 	c.Program = append(c.Program, Literal(FormatOpCode(opcode)))
 	c.Program = append(c.Program, a.Word())
@@ -158,8 +198,8 @@ func (c *Compiler) Add(a, b, x Parameter) {
 	c.Program = append(c.Program, x.Word())
 }
 
-// Mul writes a new mul operation with a given set of parameters.
-func (c *Compiler) Mul(a, b, x Parameter) {
+// EmitMul writes a new mul operation with a given set of parameters.
+func (c *Compiler) EmitMul(a, b, x Parameter) {
 	opcode := OpCode{Op: OpAdd, Modes: [3]int{0, b.Mode, a.Mode}}
 
 	c.Program = append(c.Program, Literal(FormatOpCode(opcode)))
@@ -168,37 +208,37 @@ func (c *Compiler) Mul(a, b, x Parameter) {
 	c.Program = append(c.Program, x.Word())
 }
 
-// Input writes an input with a given storage address.
-func (c *Compiler) Input(x Parameter) {
+// EmitInput writes an input with a given storage address.
+func (c *Compiler) EmitInput(x Parameter) {
 	c.Program = append(c.Program, Literal(OpInput))
 	c.Program = append(c.Program, x.Word())
 }
 
-// Print writes an print with a given parameter.
-func (c *Compiler) Print(x Parameter) {
+// EmitPrint writes an print with a given parameter.
+func (c *Compiler) EmitPrint(x Parameter) {
 	opcode := OpCode{Op: OpPrint, Modes: [3]int{0, 0, x.Mode}}
 	c.Program = append(c.Program, Literal(FormatOpCode(opcode)))
 	c.Program = append(c.Program, x.Word())
 }
 
-// JumpIfTrue writes a new jump-if-true operation with a given set of parameters.
-func (c *Compiler) JumpIfTrue(a, b Parameter) {
-	opcode := OpCode{Op: OpJumpIfTrue, Modes: [3]int{0, b.Mode, a.Mode}}
+// EmitJumpIfTrue writes a new jump-if-true operation with a given set of parameters.
+func (c *Compiler) EmitJumpIfTrue(testValue, jumpTo Parameter) {
+	opcode := OpCode{Op: OpJumpIfTrue, Modes: [3]int{0, jumpTo.Mode, testValue.Mode}}
 	c.Program = append(c.Program, Literal(FormatOpCode(opcode)))
-	c.Program = append(c.Program, a.Value)
-	c.Program = append(c.Program, b.Value)
+	c.Program = append(c.Program, testValue.Word())
+	c.Program = append(c.Program, jumpTo.Word())
 }
 
-// JumpIfFalse writes a new jump-if-false operation with a given set of parameters.
-func (c *Compiler) JumpIfFalse(a, b Parameter) {
-	opcode := OpCode{Op: OpJumpIfFalse, Modes: [3]int{0, b.Mode, a.Mode}}
+// EmitJumpIfFalse writes a new jump-if-false operation with a given set of parameters.
+func (c *Compiler) EmitJumpIfFalse(testValue, jumpTo Parameter) {
+	opcode := OpCode{Op: OpJumpIfFalse, Modes: [3]int{0, jumpTo.Mode, testValue.Mode}}
 	c.Program = append(c.Program, Literal(FormatOpCode(opcode)))
-	c.Program = append(c.Program, a.Word())
-	c.Program = append(c.Program, b.Word())
+	c.Program = append(c.Program, testValue.Word())
+	c.Program = append(c.Program, jumpTo.Word())
 }
 
-// LessThan writes a new less-than operation with a given set of parameters.
-func (c *Compiler) LessThan(a, b, x Parameter) {
+// EmitLessThan writes a new less-than operation with a given set of parameters.
+func (c *Compiler) EmitLessThan(a, b, x Parameter) {
 	opcode := OpCode{Op: OpLessThan, Modes: [3]int{0, b.Mode, a.Mode}}
 	c.Program = append(c.Program, Literal(FormatOpCode(opcode)))
 	c.Program = append(c.Program, a.Word())
@@ -206,11 +246,30 @@ func (c *Compiler) LessThan(a, b, x Parameter) {
 	c.Program = append(c.Program, x.Word())
 }
 
-// Equals writes a new less-than operation with a given set of parameters.
-func (c *Compiler) Equals(a, b, x Parameter) {
+// EmitEquals writes a new less-than operation with a given set of parameters.
+func (c *Compiler) EmitEquals(a, b, x Parameter) {
 	opcode := OpCode{Op: OpEquals, Modes: [3]int{0, b.Mode, a.Mode}}
 	c.Program = append(c.Program, Literal(FormatOpCode(opcode)))
 	c.Program = append(c.Program, a.Word())
 	c.Program = append(c.Program, b.Word())
 	c.Program = append(c.Program, x.Word())
+}
+
+// EmitSet is a helper that emits an `Add(0, A, X)`, effectively
+// setting the value X to A,
+func (c *Compiler) EmitSet(a, x Parameter) {
+	opcode := OpCode{Op: OpAdd, Modes: [3]int{0, a.Mode, ParameterModeValue}}
+	c.Program = append(c.Program, Literal(FormatOpCode(opcode)))
+	c.Program = append(c.Program, Literal(0))
+	c.Program = append(c.Program, a.Word())
+	c.Program = append(c.Program, x.Word())
+}
+
+// EmitLiteral emits a literal to the program, returning the index of that literal.
+// This typically used to dump values to the program directly that will
+// be jumped around.
+func (c *Compiler) EmitLiteral(value int) int {
+	index := len(c.Program)
+	c.Program = append(c.Program, Literal(value))
+	return index
 }

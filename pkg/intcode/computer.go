@@ -36,11 +36,18 @@ func OptDebug(debug bool) ComputerOption {
 	}
 }
 
+// OptDebugLog sets the log output collector.
+func OptDebugLog(log io.Writer) ComputerOption {
+	return func(c *Computer) {
+		c.DebugLog = log
+	}
+}
+
 // Computer is a state machine that processes a program.
 type Computer struct {
 	Name     string
 	Debug    bool
-	DebugLog []string
+	DebugLog io.Writer
 
 	PC      int
 	Op      OpCode
@@ -55,7 +62,6 @@ type Computer struct {
 
 // Reset resets all the computer registers to their default values.
 func (c *Computer) Reset() {
-	c.DebugLog = nil
 	c.Memory = c.Program
 	c.PC, c.A, c.B, c.X = 0, 0, 0, 0
 	c.Op = OpCode{}
@@ -82,17 +88,6 @@ func (c *Computer) Run() (err error) {
 	}
 }
 
-// WriteDebugLogTo writes log contents to a given writer.
-func (c *Computer) WriteDebugLogTo(w io.Writer) (err error) {
-	for _, entry := range c.DebugLog {
-		_, err = io.WriteString(w, entry+"\n")
-		if err != nil {
-			return
-		}
-	}
-	return
-}
-
 // Tick applies a computer tick, reading the current op code
 // and potentially associated parameters.
 func (c *Computer) Tick() error {
@@ -102,7 +97,8 @@ func (c *Computer) Tick() error {
 		return err
 	}
 	if c.Debug {
-		c.DebugLog = append(c.DebugLog, fmt.Sprintf("%q (%d) %s", c.Name, c.PC, c.Op.String()))
+		logEntry := fmt.Sprintf("%q (%d) %s", c.Name, c.PC, c.Op.String())
+		fmt.Fprintln(c.DebugLog, logEntry)
 	}
 
 	switch c.Op.Op {
@@ -125,7 +121,7 @@ func (c *Computer) Tick() error {
 	case OpEquals: // equals
 		return c.Equals()
 	default:
-		return ErrInvalidOpCode
+		return fmt.Errorf("%q: %d", ErrInvalidOpCode, c.Op.Op)
 	}
 }
 
@@ -144,7 +140,7 @@ func (c *Computer) Add() error {
 	if err = c.Store(c.A + c.B); err != nil {
 		return err
 	}
-	c.PC = c.PC + 4
+	c.PC = c.PC + OpWidth(OpAdd)
 	return nil
 }
 
@@ -163,7 +159,7 @@ func (c *Computer) Mul() error {
 	if err = c.Store(c.A * c.B); err != nil {
 		return err
 	}
-	c.PC = c.PC + 4
+	c.PC = c.PC + OpWidth(OpMul)
 	return nil
 }
 
@@ -182,7 +178,7 @@ func (c *Computer) Input() error {
 	if err = c.Store(value); err != nil {
 		return err
 	}
-	c.PC = c.PC + 2
+	c.PC = c.PC + OpWidth(OpInput)
 	return nil
 }
 
@@ -199,7 +195,7 @@ func (c *Computer) Print() error {
 	} else {
 		fmt.Println(c.X)
 	}
-	c.PC = c.PC + 2
+	c.PC = c.PC + OpWidth(OpPrint)
 	return nil
 }
 
@@ -216,7 +212,7 @@ func (c *Computer) JumpIfTrue() error {
 		c.PC = c.B
 		return nil
 	}
-	c.PC = c.PC + 3
+	c.PC = c.PC + OpWidth(OpJumpIfTrue)
 	return nil
 }
 
@@ -233,7 +229,7 @@ func (c *Computer) JumpIfFalse() error {
 		c.PC = c.B
 		return nil
 	}
-	c.PC = c.PC + 3
+	c.PC = c.PC + OpWidth(OpJumpIfFalse)
 	return nil
 }
 
@@ -254,7 +250,7 @@ func (c *Computer) LessThan() error {
 	} else {
 		c.Store(0)
 	}
-	c.PC = c.PC + 4
+	c.PC = c.PC + OpWidth(OpLessThan)
 	return nil
 }
 
@@ -275,7 +271,7 @@ func (c *Computer) Equals() error {
 	} else {
 		c.Store(0)
 	}
-	c.PC = c.PC + 4
+	c.PC = c.PC + OpWidth(OpEquals)
 	return nil
 }
 
@@ -284,7 +280,8 @@ func (c *Computer) Load(offset int) (result int, err error) {
 	addr := c.PC + offset
 	if c.Debug {
 		defer func() {
-			c.DebugLog = append(c.DebugLog, fmt.Sprintf("%q (%d) load %d &%d > %d", c.Name, c.PC, offset, addr, result))
+			logEntry := fmt.Sprintf("%q (%d+%d) load &%d > %d", c.Name, c.PC, offset, addr, result)
+			fmt.Fprintln(c.DebugLog, logEntry)
 		}()
 	}
 	if len(c.Memory) <= addr {
@@ -298,9 +295,16 @@ func (c *Computer) Load(offset int) (result int, err error) {
 // LoadMode loads a value from a given offset from the PC.
 func (c *Computer) LoadMode(offset int) (result int, mode int, err error) {
 	addr := c.PC + offset
+	var addr2 int
 	if c.Debug {
 		defer func() {
-			c.DebugLog = append(c.DebugLog, fmt.Sprintf("%q (%d) loadmode %d &%d (%v) > %d", c.Name, c.PC, offset, addr, ParameterMode(mode), result))
+			var logEntry string
+			if mode == 0 {
+				logEntry = fmt.Sprintf("%q (%d+%d) loadmode &%d->&%d > %d", c.Name, c.PC, offset, addr, addr2, result)
+			} else {
+				logEntry = fmt.Sprintf("%q (%d+%d) loadmode &%d > %d", c.Name, c.PC, offset, addr, result)
+			}
+			fmt.Fprintln(c.DebugLog, logEntry)
 		}()
 	}
 	if len(c.Memory) <= addr {
@@ -310,12 +314,12 @@ func (c *Computer) LoadMode(offset int) (result int, mode int, err error) {
 	mode = c.Op.Mode(offset - 1)
 	switch mode {
 	case ParameterModeReference:
-		addr = c.Memory[addr]
-		if len(c.Memory) <= addr {
-			err = fmt.Errorf("%v; address %d", ErrInvalidAddress, addr)
+		addr2 = c.Memory[addr]
+		if len(c.Memory) <= addr2 {
+			err = fmt.Errorf("%v; address %d", ErrInvalidAddress, addr2)
 			return
 		}
-		result = c.Memory[addr]
+		result = c.Memory[addr2]
 		return
 	case ParameterModeValue:
 		result = c.Memory[addr]
@@ -332,7 +336,8 @@ func (c *Computer) Store(value int) error {
 		return ErrInvalidAddress
 	}
 	if c.Debug {
-		c.DebugLog = append(c.DebugLog, fmt.Sprintf("%q (%d) store &%d < %d", c.Name, c.PC, c.X, value))
+		logEntry := fmt.Sprintf("%q (%d) store &%d < %d", c.Name, c.PC, c.X, value)
+		fmt.Fprintln(c.DebugLog, logEntry)
 	}
 	c.Memory[c.X] = value
 	return nil
