@@ -10,7 +10,8 @@ func New(program []int, options ...ComputerOption) *Computer {
 	memory := make([]int, len(program))
 	copy(memory, program)
 	c := Computer{
-		Memory: memory,
+		Program: program,
+		Memory:  memory,
 	}
 	for _, opt := range options {
 		opt(&c)
@@ -44,11 +45,20 @@ type Computer struct {
 	PC      int
 	Op      OpCode
 	A, B, X int
+	Program []int
 	Memory  []int
 
 	IsRunning      bool
 	InputHandler   func() int
 	OutputHandlers []func(int)
+}
+
+// Reset resets all the computer registers to their default values.
+func (c *Computer) Reset() {
+	c.DebugLog = nil
+	c.Memory = c.Program
+	c.PC, c.A, c.B, c.X = 0, 0, 0, 0
+	c.Op = OpCode{}
 }
 
 // Run runs the program.

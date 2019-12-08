@@ -39,7 +39,11 @@ func Test_Compiler(t *testing.T) {
 	computer := New(program, OptName("compiler-test"), OptDebug(true))
 	computer.InputHandler = InputConstant(8)
 	computer.OutputHandlers = OutputHandlers(OutputCaptureValue(&value))
-	err := computer.Run()
-	assert.Nil(err)
+	assert.Nil(computer.Run())
 	assert.Equal(1, value)
+
+	computer.InputHandler = InputConstant(7)
+	computer.Reset()
+	assert.Nil(computer.Run())
+	assert.Equal(0, value)
 }
