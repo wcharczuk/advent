@@ -90,11 +90,11 @@ func (oc OpCode) String() string {
 	case OpPrint:
 		return "print"
 	case OpJumpIfTrue:
-		return "jump if true"
+		return "jump-if-true"
 	case OpJumpIfFalse:
-		return "jump if false"
+		return "jump-if-false"
 	case OpLessThan:
-		return "less than"
+		return "less-than"
 	case OpEquals:
 		return "equals"
 	default:

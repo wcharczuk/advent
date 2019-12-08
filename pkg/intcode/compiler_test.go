@@ -72,8 +72,6 @@ func Test_Compiler(t *testing.T) {
 	var value int
 	computer := New(program,
 		OptName("compiler-test"),
-		//OptDebug(true),
-		//OptDebugLog(os.Stdout),
 	)
 	computer.InputHandler = InputConstant(8)
 	computer.OutputHandlers = OutputHandlers(OutputCaptureValue(&value))
