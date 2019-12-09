@@ -14,7 +14,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var max, trial int
+	var max, trial int64
 	for _, combination := range generatePhaseSettings() {
 		trial = runExperiment(program, combination)
 		if trial > max {
@@ -24,16 +24,16 @@ func main() {
 	fmt.Println("Test Run", max)
 }
 
-func generatePhaseSettings() [][5]int {
-	return generatePhaseSettingsImpl([5]int{}, 0)
+func generatePhaseSettings() [][5]int64 {
+	return generatePhaseSettingsImpl([5]int64{}, 0)
 }
 
-func generatePhaseSettingsImpl(working [5]int, index int) [][5]int {
+func generatePhaseSettingsImpl(working [5]int64, index int) [][5]int64 {
 	if index == 5 {
-		return [][5]int{working}
+		return [][5]int64{working}
 	}
 
-	hasValue := func(value int) bool {
+	hasValue := func(value int64) bool {
 		for y := 0; y < index; y++ {
 			if working[y] == value {
 				return true
@@ -42,18 +42,18 @@ func generatePhaseSettingsImpl(working [5]int, index int) [][5]int {
 		return false
 	}
 
-	var output [][5]int
+	var output [][5]int64
 	for x := 0; x < 5; x++ {
-		if hasValue(x + 5) {
+		if hasValue(int64(x) + 5) {
 			continue
 		}
-		working[index] = x + 5
+		working[index] = int64(x) + 5
 		output = append(output, generatePhaseSettingsImpl(working, index+1)...)
 	}
 	return output
 }
 
-func link(from, to chan int) {
+func link(from, to chan int64) {
 	for {
 		select {
 		case value := <-from:
@@ -62,7 +62,7 @@ func link(from, to chan int) {
 	}
 }
 
-func runExperiment(program []int, phaseSettings [5]int) int {
+func runExperiment(program []int64, phaseSettings [5]int64) int64 {
 	bufferSize := 128
 
 	amplifiers := [...]*intcode.Computer{
@@ -73,26 +73,26 @@ func runExperiment(program []int, phaseSettings [5]int) int {
 		intcode.New(program, intcode.OptName("E"), intcode.OptDebug(true)),
 	}
 
-	outputs := make([]chan int, 5)
+	outputs := make([]chan int64, 5)
 	for x := 0; x < 5; x++ {
-		outputs[x] = make(chan int, bufferSize)
-		amplifiers[x].OutputHandlers = append(amplifiers[x].OutputHandlers, func(index int) func(int) {
-			return func(v int) {
+		outputs[x] = make(chan int64, bufferSize)
+		amplifiers[x].OutputHandlers = append(amplifiers[x].OutputHandlers, func(index int) func(int64) {
+			return func(v int64) {
 				outputs[index] <- v
 			}
 		}(x))
 	}
 
-	var last int
-	amplifiers[4].OutputHandlers = append(amplifiers[4].OutputHandlers, func(value int) {
+	var last int64
+	amplifiers[4].OutputHandlers = append(amplifiers[4].OutputHandlers, func(value int64) {
 		last = value
 	})
 
-	inputs := make([]chan int, 5)
+	inputs := make([]chan int64, 5)
 	for x := 0; x < 5; x++ {
-		inputs[x] = make(chan int, bufferSize)
-		amplifiers[x].InputHandler = func(index int) func() int {
-			return func() int {
+		inputs[x] = make(chan int64, bufferSize)
+		amplifiers[x].InputHandler = func(index int) func() int64 {
+			return func() int64 {
 				return <-inputs[index]
 			}
 		}(x)
