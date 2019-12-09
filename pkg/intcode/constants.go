@@ -33,17 +33,19 @@ func (pm ParameterMode) String() string {
 const (
 	ParameterModeReference = 0
 	ParameterModeValue     = 1
+	ParameterModeRelative  = 2
 )
 
 // Op values
 const (
-	OpAdd         = 1
-	OpMul         = 2
-	OpInput       = 3
-	OpPrint       = 4
-	OpJumpIfTrue  = 5
-	OpJumpIfFalse = 6
-	OpLessThan    = 7
-	OpEquals      = 8
-	OpHalt        = 99
+	OpAdd          = 1
+	OpMul          = 2
+	OpInput        = 3
+	OpPrint        = 4
+	OpJumpIfTrue   = 5
+	OpJumpIfFalse  = 6
+	OpLessThan     = 7
+	OpEquals       = 8
+	OpRelativeBase = 9
+	OpHalt         = 99
 )

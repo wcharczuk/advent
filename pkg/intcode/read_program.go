@@ -9,7 +9,7 @@ import (
 )
 
 // ReadProgramFile reads a program from a file.
-func ReadProgramFile(filePath string) ([]int, error) {
+func ReadProgramFile(filePath string) ([]int64, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -19,15 +19,15 @@ func ReadProgramFile(filePath string) ([]int, error) {
 }
 
 // ReadProgram reads a program as a csv of ints.
-func ReadProgram(r io.Reader) ([]int, error) {
+func ReadProgram(r io.Reader) ([]int64, error) {
 	contents, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
 	rawValues := strings.Split(string(contents), ",")
-	opCodes := make([]int, len(rawValues))
+	opCodes := make([]int64, len(rawValues))
 	for x := 0; x < len(rawValues); x++ {
-		opCodes[x], err = strconv.Atoi(strings.TrimSpace(rawValues[x]))
+		opCodes[x], err = strconv.ParseInt(strings.TrimSpace(rawValues[x]), 10, 64)
 		if err != nil {
 			return nil, err
 		}

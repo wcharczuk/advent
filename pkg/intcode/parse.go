@@ -9,17 +9,18 @@ import (
 )
 
 // ParseString parses a program given as a string.
-func ParseString(program string) ([]int, error) {
+func ParseString(program string) ([]int64, error) {
 	return Parse(strings.NewReader(program))
 }
 
 // Parse parses a program from a given reader.
-func Parse(r io.Reader) ([]int, error) {
+func Parse(r io.Reader) ([]int64, error) {
 	scanner := bufio.NewScanner(r)
 	var line string
 	var pieces []string
 	var err error
-	var op, lineNumber, width int
+	var op, width int64
+	var lineNumber int
 	var a, b, x Parameter
 	c := new(Compiler)
 	for scanner.Scan() {
@@ -42,7 +43,7 @@ func Parse(r io.Reader) ([]int, error) {
 			return nil, fmt.Errorf("invalid program; %q @ line %d", err, lineNumber)
 		}
 		width = OpWidth(op)
-		if len(pieces) < width {
+		if len(pieces) < int(width) {
 			return nil, fmt.Errorf("invalid program; instruction does not have required number of arguments (%d), %q @ line %d", width, line, lineNumber)
 		}
 		if width > 3 {
@@ -134,7 +135,7 @@ func ParseParameter(c *Compiler, raw string) (param Parameter, err error) {
 		symbol = true
 	}
 
-	var value int
+	var value int64
 	if strings.HasPrefix(raw, ".") {
 		raw = strings.TrimPrefix(raw, ".")
 		symbol = true
@@ -143,7 +144,7 @@ func ParseParameter(c *Compiler, raw string) (param Parameter, err error) {
 			err = fmt.Errorf("parse parameter; unknown symbol %q", raw)
 		}
 	} else {
-		value, err = strconv.Atoi(raw)
+		value, err = strconv.ParseInt(raw, 10, 64)
 		if err != nil {
 			return
 		}
@@ -157,7 +158,7 @@ func ParseParameter(c *Compiler, raw string) (param Parameter, err error) {
 }
 
 // LookupOp translates an op name to an op code.
-func LookupOp(opName string) (int, error) {
+func LookupOp(opName string) (int64, error) {
 	switch strings.ToLower(opName) {
 	case "halt":
 		return OpHalt, nil

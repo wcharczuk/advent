@@ -35,8 +35,9 @@ func Test_Compiler(t *testing.T) {
 	// temp == 1, jump to halt
 	compiler.EmitJumpIfFalse(
 		compiler.ReferenceSymbol("temp"),
-		compiler.ValuePC(OpWidths(OpPrint, OpJumpIfFalse)+1), // jump over the print and the jump to halt ...
+		compiler.ValuePC(int64(OpWidths(OpPrint, OpJumpIfFalse)+1)), // jump over the print and the jump to halt ...
 	)
+
 	// print 0 (equals) //
 	compiler.EmitPrint(
 		compiler.Value(0),
@@ -54,7 +55,7 @@ func Test_Compiler(t *testing.T) {
 	)
 	compiler.EmitJumpIfFalse(
 		compiler.ReferenceSymbol("temp"),
-		compiler.ValuePC(OpWidths(OpPrint, OpJumpIfFalse)+1), // jump over the print and the jump to halt ...
+		compiler.ValuePC(int64(OpWidths(OpPrint, OpJumpIfFalse)+1)), // jump over the print and the jump to halt ...
 	)
 	compiler.EmitPrint(
 		compiler.Value(-1),
@@ -69,7 +70,7 @@ func Test_Compiler(t *testing.T) {
 	)
 	program := compiler.Compile()
 
-	var value int
+	var value int64
 	computer := New(program,
 		OptName("compiler-test"),
 	)

@@ -6,21 +6,57 @@ import (
 	"github.com/blend/go-sdk/assert"
 )
 
-func Test_Computer_LoadMode(t *testing.T) {
+func Test_Computer_Load(t *testing.T) {
 	assert := assert.New(t)
 
-	program := []int{1008, 2, 10}
+	var err error
+	program := []int64{1008, 2, 10}
 	computer := New(program)
-	result, mode, err := computer.LoadMode(1)
+
+	computer.Op, err = ParseOpCode(computer.Memory[computer.PC])
+	assert.Nil(err)
+	assert.Equal(OpEquals, computer.Op.Op)
+	assert.Equal([3]int{0, 1, 0}, computer.Op.Modes)
+
+	result, mode, err := computer.Load(1)
 	assert.Nil(err)
 	assert.Equal(ParameterModeReference, mode)
 	assert.Equal(10, result)
+
+	result, mode, err = computer.Load(2)
+	assert.Nil(err)
+	assert.Equal(ParameterModeValue, mode)
+	assert.Equal(10, result)
+}
+
+func Test_Computer_Load_Relative(t *testing.T) {
+	assert := assert.New(t)
+
+	var err error
+	program := []int64{2008, 2, 3, 0, 0, 0, 0, 0, 0, 12}
+	computer := New(program)
+	computer.RB = 6
+
+	computer.Op, err = ParseOpCode(computer.Memory[computer.PC])
+	assert.Nil(err)
+	assert.Equal(OpEquals, computer.Op.Op)
+	assert.Equal([3]int{0, 2, 0}, computer.Op.Modes)
+
+	result, mode, err := computer.Load(1)
+	assert.Nil(err)
+	assert.Equal(ParameterModeReference, mode)
+	assert.Equal(3, result)
+
+	result, mode, err = computer.Load(2)
+	assert.Nil(err)
+	assert.Equal(ParameterModeRelative, mode)
+	assert.Equal(12, result)
 }
 
 // testProgram is the program from day 5 that returns 999 if
 // the number is less than 8, 1000 if the number equals 8, and 1001
 // if the number is greater than 8.
-var testProgram = []int{
+var testProgram = []int64{
 	3, 21, // input => &21 [0, 1]
 	1008, 21, 8, 20, // equals &21 8 => &20 [2, 3, 4, 5]
 	1005, 20, 22, // jump-if-true &20 to 22 [6, 7, 8]
@@ -43,7 +79,7 @@ var testProgram = []int{
 // testProgramAltered is the program from day 5 that returns 999 if
 // the number is less than 8, 1000 if the number equals 8, and 1001
 // if the number is greater than 8, but without an erroneous .45
-var testProgramAltered = []int{
+var testProgramAltered = []int64{
 	3, 21, // input => &21 [0, 1]
 	1008, 21, 8, 20, // equals &21 8 => &20 [2, 3, 4, 5]
 	1005, 20, 22, // jump-if-true &20 to 22 [6, 7, 8]
@@ -65,13 +101,13 @@ var testProgramAltered = []int{
 func Test_Computer_Run(t *testing.T) {
 	assert := assert.New(t)
 
-	runTest := func(input int) (int, error) {
+	runTest := func(input int64) (int64, error) {
 		computer := New(testProgramAltered, OptName("run_test"))
-		computer.InputHandler = func() int {
+		computer.InputHandler = func() int64 {
 			return input
 		}
-		var output int
-		computer.OutputHandlers = append(computer.OutputHandlers, func(value int) {
+		var output int64
+		computer.OutputHandlers = append(computer.OutputHandlers, func(value int64) {
 			output = value
 		})
 		err := computer.Run()

@@ -32,7 +32,7 @@ print 1`
 	program, err := ParseString(assembly)
 	assert.Nil(err)
 
-	var value int
+	var value int64
 	computer := New(program,
 		OptName("parser-test"),
 	)

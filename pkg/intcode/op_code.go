@@ -13,8 +13,8 @@ import (
 // <a mode><10 op><1 op>
 // <b mode><a mode><20 op>
 // <x mode><b mode><a mode><10 op><1 op>
-func ParseOpCode(value int) (output OpCode, err error) {
-	runes := []rune(strconv.Itoa(value))
+func ParseOpCode(value int64) (output OpCode, err error) {
+	runes := []rune(strconv.FormatInt(value, 10))
 	if len(runes) == 1 {
 		runes = append([]rune(string("0000")), runes...)
 	} else if len(runes) == 2 {
@@ -25,27 +25,29 @@ func ParseOpCode(value int) (output OpCode, err error) {
 		runes = append([]rune(string("0")), runes...)
 	}
 
-	output.Op, err = strconv.Atoi(string([]rune{runes[3], runes[4]}))
+	output.Op, err = strconv.ParseInt(string([]rune{runes[3], runes[4]}), 10, 64)
 	if err != nil {
 		return
 	}
 
 	output.Modes = [3]int{0, 0, 0}
-	if runes[0] == '1' {
-		output.Modes[0] = 1
+	output.Modes[0], err = strconv.Atoi(string([]rune{runes[0]}))
+	if err != nil {
+		return
 	}
-	if runes[1] == '1' {
-		output.Modes[1] = 1
+	output.Modes[1], err = strconv.Atoi(string([]rune{runes[1]}))
+	if err != nil {
+		return
 	}
-	if runes[2] == '1' {
-		output.Modes[2] = 1
+	output.Modes[2], err = strconv.Atoi(string([]rune{runes[2]}))
+	if err != nil {
+		return
 	}
-
 	return
 }
 
 // FormatOpCode formats an op code as an integer.
-func FormatOpCode(oc OpCode) int {
+func FormatOpCode(oc OpCode) int64 {
 	if oc.Modes[0] == 0 && oc.Modes[1] == 0 && oc.Modes[2] == 0 {
 		return oc.Op
 	}
@@ -66,13 +68,13 @@ func FormatOpCode(oc OpCode) int {
 	}
 
 	pieces = append(pieces, fmt.Sprintf("%02d", oc.Op))
-	value, _ := strconv.Atoi(strings.Join(pieces, ""))
+	value, _ := strconv.ParseInt(strings.Join(pieces, ""), 10, 64)
 	return value
 }
 
 // OpCode is an operation.
 type OpCode struct {
-	Op    int
+	Op    int64
 	Modes [3]int
 }
 
@@ -97,6 +99,8 @@ func (oc OpCode) String() string {
 		return "less-than"
 	case OpEquals:
 		return "equals"
+	case OpRelativeBase:
+		return "rb"
 	default:
 		return "unknown"
 	}

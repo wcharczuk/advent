@@ -11,22 +11,22 @@ func NewCompiler() *Compiler {
 type Word interface{}
 
 // Literal is an offset from the beginning of the program, i.e. PC@0.
-type Literal int
+type Literal int64
 
 // Symbol is an offset from the end of the program,
 // typically it is used to give the value of a symbol (i.e. a variable)
 // but can also be used to move relative to the end of the program.
 // If your last instruction is 99 (HALT), you can use Symbol(-1) to jump to that halt.
-type Symbol int
+type Symbol int64
 
 // PC is an offset from the current PC register,
 // You can use it to move relative to your progress within a program.
-type PC int
+type PC int64
 
 // Parameter is an input to an operation.
 type Parameter struct {
 	Mode   int
-	Value  int
+	Value  int64
 	Symbol bool
 	PC     bool
 }
@@ -45,22 +45,22 @@ func (p Parameter) Word() Word {
 // Compiler is a helper for writing intcode programs.
 type Compiler struct {
 	Program     []Word
-	SymbolAddrs map[string]int
-	Symbols     []int
+	SymbolAddrs map[string]int64
+	Symbols     []int64
 }
 
 // Compile processes the program, setting up variable references where relevant.
-func (c *Compiler) Compile() (program []int) {
+func (c *Compiler) Compile() (program []int64) {
 	for _, word := range c.Program {
 		switch typed := word.(type) {
 		case Literal:
-			program = append(program, int(typed))
+			program = append(program, int64(typed))
 			continue
 		case Symbol:
-			program = append(program, len(c.Program)+(int(typed)+1))
+			program = append(program, int64(len(c.Program))+(int64(typed)+1))
 			continue
 		case PC:
-			program = append(program, len(program)+int(typed))
+			program = append(program, int64(len(program))+int64(typed))
 			continue
 		}
 	}
@@ -72,12 +72,12 @@ func (c *Compiler) Compile() (program []int) {
 // CreateSymbol creates a symbol.
 func (c *Compiler) CreateSymbol(name string) {
 	if c.SymbolAddrs == nil {
-		c.SymbolAddrs = make(map[string]int)
+		c.SymbolAddrs = make(map[string]int64)
 	}
 	if _, ok := c.SymbolAddrs[name]; ok {
 		panic(fmt.Sprintf("symbol already exists: %q", name))
 	}
-	c.SymbolAddrs[name] = len(c.Symbols)
+	c.SymbolAddrs[name] = int64(len(c.Symbols))
 	c.Symbols = append(c.Symbols, 0)
 }
 
@@ -112,7 +112,7 @@ func (c *Compiler) StoreSymbol(name string) Parameter {
 
 // ValueSymbolOffset returns a value that represents the address
 // that is offset from the end of the program.
-func (c *Compiler) ValueSymbolOffset(offset int) Parameter {
+func (c *Compiler) ValueSymbolOffset(offset int64) Parameter {
 	return Parameter{
 		Mode:   ParameterModeValue,
 		Symbol: true,
@@ -122,7 +122,7 @@ func (c *Compiler) ValueSymbolOffset(offset int) Parameter {
 
 // ReferenceSymbolOffset returns a value that represents the address
 // that is offset from the end of the program.
-func (c *Compiler) ReferenceSymbolOffset(offset int) Parameter {
+func (c *Compiler) ReferenceSymbolOffset(offset int64) Parameter {
 	return Parameter{
 		Mode:   ParameterModeReference,
 		Symbol: true,
@@ -141,7 +141,7 @@ func (c *Compiler) ValueHaltAddr() Parameter {
 }
 
 // Value returns an immediate mode parameter.
-func (c *Compiler) Value(value int) Parameter {
+func (c *Compiler) Value(value int64) Parameter {
 	return Parameter{
 		Mode:  ParameterModeValue,
 		Value: value,
@@ -149,7 +149,7 @@ func (c *Compiler) Value(value int) Parameter {
 }
 
 // Reference returns an reference mode parameter.
-func (c *Compiler) Reference(addr int) Parameter {
+func (c *Compiler) Reference(addr int64) Parameter {
 	return Parameter{
 		Mode:  ParameterModeReference,
 		Value: addr,
@@ -158,14 +158,14 @@ func (c *Compiler) Reference(addr int) Parameter {
 
 // Store returns a program space storage parameter.
 // It is intended to be used as an address.
-func (c *Compiler) Store(addr int) Parameter {
+func (c *Compiler) Store(addr int64) Parameter {
 	return Parameter{
 		Value: addr,
 	}
 }
 
 // ValuePC retruns a parameter that is a value of the current PC address with a given offset.
-func (c *Compiler) ValuePC(offset int) Parameter {
+func (c *Compiler) ValuePC(offset int64) Parameter {
 	return Parameter{
 		Mode:  ParameterModeValue,
 		PC:    true,
@@ -176,7 +176,7 @@ func (c *Compiler) ValuePC(offset int) Parameter {
 // ReferencePC returns a PC parameter with a given offset.
 // It is always a reference, that is, it will have the effect
 // of returning the value at a given address, not the address itself.
-func (c *Compiler) ReferencePC(offset int) Parameter {
+func (c *Compiler) ReferencePC(offset int64) Parameter {
 	return Parameter{
 		Mode:  ParameterModeReference,
 		PC:    true,
