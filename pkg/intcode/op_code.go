@@ -6,6 +6,20 @@ import (
 	"strings"
 )
 
+// OpCode values
+const (
+	OpAdd          = 1
+	OpMul          = 2
+	OpInput        = 3
+	OpPrint        = 4
+	OpJumpIfTrue   = 5
+	OpJumpIfFalse  = 6
+	OpLessThan     = 7
+	OpEquals       = 8
+	OpRelativeBase = 9
+	OpHalt         = 99
+)
+
 // ParseOpCode parses an input as a structured opcode.
 // The op code can be in the form
 // <1 op>
@@ -76,34 +90,6 @@ func FormatOpCode(oc OpCode) int64 {
 type OpCode struct {
 	Op    int64
 	Modes [3]int
-}
-
-// String returns a descriptive string for the op code.
-func (oc OpCode) String() string {
-	switch oc.Op {
-	case OpHalt:
-		return "halt"
-	case OpAdd:
-		return "add"
-	case OpMul:
-		return "mul"
-	case OpInput:
-		return "input"
-	case OpPrint:
-		return "print"
-	case OpJumpIfTrue:
-		return "jump-if-true"
-	case OpJumpIfFalse:
-		return "jump-if-false"
-	case OpLessThan:
-		return "less-than"
-	case OpEquals:
-		return "equals"
-	case OpRelativeBase:
-		return "rb"
-	default:
-		return "unknown"
-	}
 }
 
 // Mode returns the mode for an index.

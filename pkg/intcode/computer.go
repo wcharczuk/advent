@@ -103,234 +103,26 @@ func (c *Computer) Tick() error {
 	if err != nil {
 		return err
 	}
-	if c.Debug {
-		logEntry := fmt.Sprintf("%q (%d) %s", c.Name, c.PC, c.Op.String())
-		fmt.Fprintln(c.DebugLog, logEntry)
-	}
 
-	switch c.Op.Op {
-	case OpHalt:
-		return ErrHalt
-	case OpAdd:
-		return c.Add()
-	case OpMul:
-		return c.Mul()
-	case OpInput: // input
-		return c.Input()
-	case OpPrint: // print
-		return c.Print()
-	case OpJumpIfTrue: // jump if true
-		return c.JumpIfTrue()
-	case OpJumpIfFalse: // jump if false
-		return c.JumpIfFalse()
-	case OpLessThan: // less than
-		return c.LessThan()
-	case OpEquals: // equals
-		return c.Equals()
-	case OpRelativeBase:
-		return c.RelativeBase()
-	default:
-		return fmt.Errorf("%q: %d", ErrInvalidOpCode, c.Op.Op)
-	}
-}
-
-// Add implements the add operator.
-func (c *Computer) Add() error {
-	var err error
-	if c.A, _, err = c.Load(1); err != nil {
-		return err
-	}
-	if c.B, _, err = c.Load(2); err != nil {
-		return err
-	}
-	if c.X, _, err = c.LoadForStore(3); err != nil {
-		return err
-	}
-	if err = c.Store(c.A + c.B); err != nil {
-		return err
-	}
-	c.PC = c.PC + OpWidth(OpAdd)
-	return nil
-}
-
-// Mul implements the multiply operator.
-func (c *Computer) Mul() error {
-	var err error
-	if c.A, _, err = c.Load(1); err != nil {
-		return err
-	}
-	if c.B, _, err = c.Load(2); err != nil {
-		return err
-	}
-	if c.X, _, err = c.LoadForStore(3); err != nil {
-		return err
-	}
-	if err = c.Store(c.A * c.B); err != nil {
-		return err
-	}
-	c.PC = c.PC + OpWidth(OpMul)
-	return nil
-}
-
-// Input implements the input operator.
-func (c *Computer) Input() error {
-	var err error
-	if c.X, _, err = c.LoadForStore(1); err != nil {
-		return err
-	}
-	var value int64
-	if c.InputHandler != nil {
-		value = c.InputHandler()
-	} else {
-		value = ReadInt()
-	}
-	if err = c.Store(value); err != nil {
-		return err
-	}
-	c.PC = c.PC + OpWidth(OpInput)
-	return nil
-}
-
-// Print implements the print operator.
-func (c *Computer) Print() error {
-	var err error
-	if c.A, _, err = c.Load(1); err != nil {
-		return err
-	}
-	if len(c.OutputHandlers) > 0 {
-		for _, handler := range c.OutputHandlers {
-			handler(c.A)
+	if instruction, ok := Instructions[c.Op.Op]; ok {
+		if c.Debug {
+			logEntry := fmt.Sprintf("%q (%d) %s", c.Name, c.PC, instruction.Name())
+			fmt.Fprintln(c.DebugLog, logEntry)
+		}
+		if err = instruction.Action(c); err != nil {
+			return err
+		}
+		if typed, ok := instruction.(InstructionPC); ok {
+			if err = typed.MovePC(c); err != nil {
+				return nil
+			}
+		} else {
+			c.PC = c.PC + int64(instruction.Width())
 		}
 	} else {
-		fmt.Println(c.A)
+		return fmt.Errorf("%q: %d", ErrInvalidOpCode, c.Op.Op)
 	}
-	c.PC = c.PC + OpWidth(OpPrint)
 	return nil
-}
-
-// JumpIfTrue implements the jump if true operator.
-func (c *Computer) JumpIfTrue() error {
-	var err error
-	if c.A, _, err = c.Load(1); err != nil {
-		return err
-	}
-	if c.B, _, err = c.Load(2); err != nil {
-		return err
-	}
-	if c.A > 0 {
-		c.PC = c.B
-		return nil
-	}
-	c.PC = c.PC + OpWidth(OpJumpIfTrue)
-	return nil
-}
-
-// JumpIfFalse implements the jump if false operator.
-func (c *Computer) JumpIfFalse() error {
-	var err error
-	if c.A, _, err = c.Load(1); err != nil {
-		return err
-	}
-	if c.B, _, err = c.Load(2); err != nil {
-		return err
-	}
-	if c.A == 0 {
-		c.PC = c.B
-		return nil
-	}
-	c.PC = c.PC + OpWidth(OpJumpIfFalse)
-	return nil
-}
-
-// LessThan implements the less than operator.
-func (c *Computer) LessThan() error {
-	var err error
-	if c.A, _, err = c.Load(1); err != nil {
-		return err
-	}
-	if c.B, _, err = c.Load(2); err != nil {
-		return err
-	}
-	if c.X, _, err = c.LoadForStore(3); err != nil {
-		return err
-	}
-	if c.A < c.B {
-		c.Store(1)
-	} else {
-		c.Store(0)
-	}
-	c.PC = c.PC + OpWidth(OpLessThan)
-	return nil
-}
-
-// Equals implements the equals operator.
-func (c *Computer) Equals() error {
-	var err error
-	if c.A, _, err = c.Load(1); err != nil {
-		return err
-	}
-	if c.B, _, err = c.Load(2); err != nil {
-		return err
-	}
-	if c.X, _, err = c.LoadForStore(3); err != nil {
-		return err
-	}
-	if c.A == c.B {
-		c.Store(1)
-	} else {
-		c.Store(0)
-	}
-	c.PC = c.PC + OpWidth(OpEquals)
-	return nil
-}
-
-// RelativeBase sets the current RB value.
-func (c *Computer) RelativeBase() error {
-	var err error
-	if c.A, _, err = c.Load(1); err != nil {
-		return err
-	}
-
-	c.RB = c.RB + c.A
-	c.PC = c.PC + OpWidth(OpRelativeBase)
-	return nil
-}
-
-// LoadForStore loads a value for a register to be used as a storage address (typically the X  register).
-func (c *Computer) LoadForStore(offset int) (result int64, mode int, err error) {
-	addr := c.PC + int64(offset)
-	var addr2 int64
-	if c.Debug {
-		defer func() {
-			var logEntry string
-			if mode == 0 {
-				logEntry = fmt.Sprintf("%q (%d+%d) loadmode &%d > %d", c.Name, c.PC, offset, addr, result)
-			} else if mode == 2 {
-				logEntry = fmt.Sprintf("%q (%d+%d) loadmode %d+(%d) > %d", c.Name, c.PC, offset, c.RB, addr2, result)
-			}
-			fmt.Fprintln(c.DebugLog, logEntry)
-		}()
-	}
-	if addr < 0 {
-		err = fmt.Errorf("%v; address %d", ErrInvalidAddress, addr)
-		return
-	}
-
-	// get the parameter mode
-	mode = c.Op.Mode(offset - 1)
-	switch mode {
-	case ParameterModeReference: // 0, the default
-		result = c.Memory[addr]
-		return
-	case ParameterModeRelative:
-		addr2 = c.Memory[addr]
-		result = c.RB + addr2
-		return
-
-	default:
-		err = fmt.Errorf("invalid parameter mode for store: %d", mode)
-		return
-	}
 }
 
 // Load loads a value from a given offset from the PC.
@@ -392,6 +184,43 @@ func (c *Computer) Load(offset int) (result int64, mode int, err error) {
 
 	default:
 		err = ErrInvalidParameterMode
+		return
+	}
+}
+
+// LoadForStore loads a value for a register to be used as a storage address (typically the X  register).
+func (c *Computer) LoadForStore(offset int) (result int64, mode int, err error) {
+	addr := c.PC + int64(offset)
+	var addr2 int64
+	if c.Debug {
+		defer func() {
+			var logEntry string
+			if mode == 0 {
+				logEntry = fmt.Sprintf("%q (%d+%d) loadmode &%d > %d", c.Name, c.PC, offset, addr, result)
+			} else if mode == 2 {
+				logEntry = fmt.Sprintf("%q (%d+%d) loadmode %d+(%d) > %d", c.Name, c.PC, offset, c.RB, addr2, result)
+			}
+			fmt.Fprintln(c.DebugLog, logEntry)
+		}()
+	}
+	if addr < 0 {
+		err = fmt.Errorf("%v; address %d", ErrInvalidAddress, addr)
+		return
+	}
+
+	// get the parameter mode
+	mode = c.Op.Mode(offset - 1)
+	switch mode {
+	case ParameterModeReference: // 0, the default
+		result = c.Memory[addr]
+		return
+	case ParameterModeRelative:
+		addr2 = c.Memory[addr]
+		result = c.RB + addr2
+		return
+
+	default:
+		err = fmt.Errorf("invalid parameter mode for store: %d", mode)
 		return
 	}
 }
