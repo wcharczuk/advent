@@ -30,13 +30,6 @@ func Parse(r io.Reader) ([]int64, error) {
 			continue
 		}
 
-		// handle symbols (i.e. .NAME)
-		if strings.HasPrefix(line, ".") {
-			line = strings.TrimPrefix(line, ".")
-			c.CreateSymbol(line)
-			continue
-		}
-
 		pieces = strings.Split(line, " ")
 		op, err = LookupOp(pieces[0])
 		if err != nil {
@@ -94,6 +87,8 @@ func Parse(r io.Reader) ([]int64, error) {
 			c.EmitLessThan(a, b, x)
 		case OpEquals:
 			c.EmitEquals(a, b, x)
+		case OpRelativeBase:
+			c.EmitRelativeBase(a)
 		}
 
 	}
@@ -104,55 +99,23 @@ func Parse(r io.Reader) ([]int64, error) {
 // A parameter should be in the form:
 //    <value>
 //    &<addr>
-//    .name
-//    &.name
-//    pc(<offset>)
-//    &pc(<offset>)
-//    sym(<offset>)
-//    &sym(<offset>)
+//    @<offset>
 func ParseParameter(c *Compiler, raw string) (param Parameter, err error) {
-	var symbol, ok, pc bool
 	mode := ParameterModeValue
 	if strings.HasPrefix(raw, "&") {
 		mode = ParameterModeReference
 		raw = strings.TrimPrefix(raw, "&")
-	}
-	if strings.HasPrefix(raw, "pc(") {
-		raw = strings.TrimPrefix(raw, "pc(")
-		if !strings.HasSuffix(raw, ")") {
-			err = fmt.Errorf("parse parameter; pc param is missing closing ')'")
-			return
-		}
-		raw = strings.TrimSuffix(raw, ")")
-		pc = true
-	} else if strings.HasPrefix(raw, "sym(") {
-		raw = strings.TrimPrefix(raw, "sym(")
-		if !strings.HasSuffix(raw, ")") {
-			err = fmt.Errorf("parse parameter; sym param is missing closing ')'")
-			return
-		}
-		raw = strings.TrimSuffix(raw, ")")
-		symbol = true
+	} else if strings.HasPrefix(raw, "@") {
+		mode = ParameterModeRelative
+		raw = strings.TrimPrefix(raw, "@")
 	}
 
 	var value int64
-	if strings.HasPrefix(raw, ".") {
-		raw = strings.TrimPrefix(raw, ".")
-		symbol = true
-		value, ok = c.SymbolAddrs[raw]
-		if !ok {
-			err = fmt.Errorf("parse parameter; unknown symbol %q", raw)
-		}
-	} else {
-		value, err = strconv.ParseInt(raw, 10, 64)
-		if err != nil {
-			return
-		}
+	value, err = strconv.ParseInt(raw, 10, 64)
+	if err != nil {
+		return
 	}
-
 	param.Mode = mode
-	param.Symbol = symbol
-	param.PC = pc
 	param.Value = value
 	return
 }
@@ -178,6 +141,8 @@ func LookupOp(opName string) (int64, error) {
 		return OpLessThan, nil
 	case "equals":
 		return OpEquals, nil
+	case "rb":
+		return OpRelativeBase, nil
 	default:
 		return -1, fmt.Errorf("lookup op; invalid op name: %s", opName)
 	}
