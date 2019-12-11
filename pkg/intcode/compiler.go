@@ -7,9 +7,8 @@ func NewCompiler() *Compiler {
 
 // Parameter is an input to an operation.
 type Parameter struct {
-	Mode   int
-	Value  int64
-	Symbol bool
+	Mode  int
+	Value int64
 }
 
 // Compiler is a helper for writing intcode programs.

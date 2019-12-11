@@ -1,11 +1,6 @@
 package intcode
 
-import (
-	"testing"
-
-	"github.com/blend/go-sdk/assert"
-)
-
+/*
 func Test_ParseString(t *testing.T) {
 	assert := assert.New(t)
 
@@ -52,3 +47,4 @@ print 1`
 	assert.Equal(1, value)
 
 }
+*/

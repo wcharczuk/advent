@@ -1,11 +1,6 @@
 package intcode
 
-import (
-	"testing"
-
-	"github.com/blend/go-sdk/assert"
-)
-
+/*
 func Test_Compiler(t *testing.T) {
 	assert := assert.New(t)
 
@@ -89,3 +84,4 @@ func Test_Compiler(t *testing.T) {
 	assert.Nil(computer.Run())
 	assert.Equal(1, value)
 }
+*/
